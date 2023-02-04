@@ -1,3 +1,188 @@
+// formerly startup.js
+
+var pluralizing;
+var infoModal = new bootstrap.Modal(document.getElementById("infoModal"));
+var settingsModal = new bootstrap.Modal(
+  document.getElementById("settingsModal")
+);
+var statsModal = new bootstrap.Modal(document.getElementById("statsModal"));
+
+window.onload = function() {
+  var input = document.getElementById("userGuess");
+
+  input.addEventListener("keyup", function(event) {
+    if (event.keyCode === 13 && event.shiftKey) {
+      event.preventDefault();
+      if ($("#autoPlural").is(":checked")) {
+        pluralizing = false;
+      } else {
+        pluralizing = true;
+      }
+      document.getElementById("submitGuess").click();
+    } else {
+      if (event.keyCode === 13) {
+        if ($("#autoPlural").is(":checked")) {
+          pluralizing = true;
+        } else {
+          pluralizing = false;
+        }
+        document.getElementById("submitGuess").click();
+      }
+    }
+  });
+
+  $("#submitGuess").click(function() {
+    if (
+      !document.getElementById("userGuess").value == "" ||
+      !document.getElementById("userGuess").value ==
+        document.getElementById("userGuess").defaultValue
+    ) {
+      var allGuesses = [
+        document.getElementById("userGuess").value.replace(/\s/g, ""),
+      ];
+
+      if (pluralizing) {
+        var pluralGuess = pluralize(allGuesses[0]);
+        var singularGuess = pluralize.singular(allGuesses[0]);
+        if (pluralGuess != allGuesses[0]) {
+          allGuesses.push(pluralGuess);
+        }
+        if (singularGuess != allGuesses[0]) {
+          allGuesses.push(singularGuess);
+        }
+      }
+      for (var i = allGuesses.length - 1; i > -1; i--) {
+        PerformGuess(allGuesses[i], false);
+      }
+      pluralizing = false;
+    }
+  });
+
+  $(function() {
+    $("#hideZero").click(function() {
+      if ($("#hideZero").is(":checked")) {
+        HideZero();
+      } else {
+        ShowZero();
+      }
+    });
+  });
+
+  $(function() {
+    $("#hideLog").click(function() {
+      if ($("#hideLog").is(":checked")) {
+        HideLog();
+      } else {
+        ShowLog();
+      }
+    });
+  });
+
+  $(function() {
+    $("#hidePopup").click(function() {
+      if ($("#hidePopup").is(":checked")) {
+        HidePopup();
+      } else {
+        ShowPopup();
+      }
+    });
+  });
+
+  $(function() {
+    $("#autoPlural").click(function() {
+      if ($("#autoPlural").is(":checked")) {
+        pluralizing = true;
+        SaveProgress();
+      } else {
+        pluralizing = false;
+        SaveProgress();
+      }
+    });
+  });
+
+  $("#statsBtn").click(function() {
+    BuildStats();
+    statsModal.show();
+    document.querySelector("body").style.overflow = "hidden";
+  });
+
+  $("#settingsBtn").click(function() {
+    settingsModal.show();
+    document.querySelector("body").style.overflow = "hidden";
+  });
+
+  $("#infoBtn").click(function() {
+    infoModal.show();
+    document.querySelector("body").style.overflow = "hidden";
+  });
+
+  $(".closeInfo").each(function() {
+    $(this).click(function() {
+      infoModal.hide();
+      document.querySelector("body").style.overflow = "auto";
+    });
+  });
+
+  $(".closeSettings").each(function() {
+    $(this).click(function() {
+      settingsModal.hide();
+      document.querySelector("body").style.overflow = "auto";
+    });
+  });
+
+  $(".closeStats").each(function() {
+    $(this).click(function() {
+      statsModal.hide();
+      document.querySelector("body").style.overflow = "auto";
+    });
+  });
+
+  $("#backToTop").click(function() {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  });
+
+  window.onclick = function(event) {
+    if (event.target == document.getElementById("infoModal")) {
+      infoModal.hide();
+      document.querySelector("body").style.overflow = "auto";
+    }
+    if (event.target == document.getElementById("settingsModal")) {
+      settingsModal.hide();
+      document.querySelector("body").style.overflow = "auto";
+    }
+    if (event.target == document.getElementById("statsModal")) {
+      statsModal.hide();
+      document.querySelector("body").style.overflow = "auto";
+    }
+  };
+};
+
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+import {
+  getDatabase,
+  get,
+  set,
+  ref,
+  push,
+  onChildAdded,
+} from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCKuwvb-kN3FgzmGdp-n8KsDcfwsqXyEuM",
+  authDomain: "wedactle.firebaseapp.com",
+  databaseURL: "https://wedactle-default-rtdb.firebaseio.com",
+  projectId: "wedactle",
+  storageBucket: "wedactle.appspot.com",
+  messagingSenderId: "706626123460",
+  appId: "1:706626123460:web:f9f4ffa85d3c01e46d3b91",
+  databaseURL: "https://wedactle-default-rtdb.firebaseio.com",
+};
+
+// Initialize Firebase
+const db = getDatabase(initializeApp(firebaseConfig));
+
 var wikiHolder = document.getElementById("wikiHolder");
 var guessLogBody = document.getElementById("guessLogBody");
 var statLogBody = document.getElementById("statsTable");
@@ -25,6 +210,8 @@ var playerID;
 var ses;
 var redactleIndex;
 var yesterday;
+var gameID = window.location.hash.slice(1).trim();
+console.log(gameID);
 
 function uuidv4() {
   return ([1e7] + 1e3 + 4e3 + 8e3 + 1e11).replace(/[018]/g, (c) =>
@@ -59,15 +246,32 @@ async function LoadSave() {
   localStorage.setItem("redactleSavet", JSON.stringify(save));
   playerID = save.id.playerID;
 
+  let article;
+  if (gameID == "") {
+    gameID = uuidv4();
+    window.location.hash = "#" + gameID;
+    article = await getRandomArticle();
+    set(ref(db, `/${gameID}/article`), article);
+  } else {
+    article = (await get(ref(db, `/${gameID}/article`))).val();
+  }
+
+  await fetchData(article);
+
+  onChildAdded(ref(db, `/${gameID}/guessedWords`), (data) => {
+    PerformGuess(data.val(), true);
+  });
+}
+
+async function getRandomArticle() {
   const randomURL =
     "https://randomincategory.toolforge.org/?category=All%20Wikipedia%20level-4%20vital%20articles&server=en.wikipedia.org&returntype=subject&debug=true";
   const resp = await fetch(randomURL);
   const text = await resp.text();
-  const article = text
+  return text
     .split("<br>")
     .at(-2)
     .split("Location: https://en.wikipedia.org/wiki/")[1];
-  return await fetchData(article);
 }
 
 async function fetchData(article) {
@@ -108,7 +312,7 @@ async function fetchData(article) {
         var seeAlso = document.getElementById("References").parentNode;
       }
       var e = document.getElementsByClassName("mw-parser-output");
-      alsoIndex = Array.prototype.indexOf.call(
+      const alsoIndex = Array.prototype.indexOf.call(
         seeAlso.parentNode.children,
         seeAlso
       );
@@ -236,13 +440,6 @@ async function fetchData(article) {
           }
         });
 
-      if (guessedWords.length > 0) {
-        for (var i = 0; i < guessedWords.length; i++) {
-          guessCounter += 1;
-          PerformGuess(guessedWords[i][0], true);
-        }
-      }
-
       if (pluralizing) {
         document.getElementById("autoPlural").checked = true;
       } else {
@@ -278,6 +475,10 @@ async function fetchData(article) {
 LoadSave();
 
 function PerformGuess(guessedWord, populate) {
+  if (!populate) {
+    set(push(ref(db, `/${gameID}/guessedWords`)), guessedWord);
+    return;
+  }
   clickThruIndex = 0;
   RemoveHighlights(false);
   var normGuess = guessedWord
@@ -366,7 +567,9 @@ function LogGuess(guess, populate) {
         .innerHTML.normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
-      allInstances = wikiHolder.querySelectorAll('[data-word="' + inTxt + '"]');
+      const allInstances = wikiHolder.querySelectorAll(
+        '[data-word="' + inTxt + '"]'
+      );
       if (currentlyHighlighted == null) {
         clickThruIndex = 0;
         currentlyHighlighted = inTxt;
