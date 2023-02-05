@@ -264,11 +264,7 @@ async function fetchData(article) {
           }
         });
 
-      if (pluralizing) {
-        document.getElementById("autoPlural").checked = true;
-      } else {
-        document.getElementById("autoPlural").checked = false;
-      }
+      document.getElementById("autoPlural").checked = pluralizing;
 
       if (hidingZero) {
         document.getElementById("hideZero").checked = true;
@@ -555,11 +551,7 @@ function RemoveHighlights(clearCur) {
 }
 
 function SaveProgress() {
-  if ($("#autoPlural").is(":checked")) {
-    pluralizing = true;
-  } else {
-    pluralizing = false;
-  }
+  pluralizing = $("#autoPlural").is(":checked");
   save.prefs.hidingZero = hidingZero;
   save.prefs.hidingLog = hidingLog;
   save.prefs.pluralizing = pluralizing;
@@ -572,21 +564,11 @@ window.onload = function() {
   input.addEventListener("keyup", function(event) {
     if (event.keyCode === 13 && event.shiftKey) {
       event.preventDefault();
-      if ($("#autoPlural").is(":checked")) {
-        pluralizing = false;
-      } else {
-        pluralizing = true;
-      }
+      pluralizing = !$("#autoPlural").is(":checked");
       document.getElementById("submitGuess").click();
-    } else {
-      if (event.keyCode === 13) {
-        if ($("#autoPlural").is(":checked")) {
-          pluralizing = true;
-        } else {
-          pluralizing = false;
-        }
-        document.getElementById("submitGuess").click();
-      }
+    } else if (event.keyCode === 13) {
+      pluralizing = $("#autoPlural").is(":checked");
+      document.getElementById("submitGuess").click();
     }
   });
 
@@ -630,13 +612,7 @@ window.onload = function() {
 
   $(function() {
     $("#autoPlural").click(function() {
-      if ($("#autoPlural").is(":checked")) {
-        pluralizing = true;
-        SaveProgress();
-      } else {
-        pluralizing = false;
-        SaveProgress();
-      }
+      pluralizing = $("#autoPlural").is(":checked");
     });
   });
 
