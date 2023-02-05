@@ -5,7 +5,6 @@ var infoModal = new bootstrap.Modal(document.getElementById("infoModal"));
 var settingsModal = new bootstrap.Modal(
   document.getElementById("settingsModal")
 );
-var statsModal = new bootstrap.Modal(document.getElementById("statsModal"));
 
 window.onload = function() {
   var input = document.getElementById("userGuess");
@@ -55,6 +54,7 @@ window.onload = function() {
         PerformGuess(allGuesses[i], false);
       }
       pluralizing = false;
+      document.getElementById("userGuess").value = "";
     }
   });
 
@@ -64,26 +64,6 @@ window.onload = function() {
         HideZero();
       } else {
         ShowZero();
-      }
-    });
-  });
-
-  $(function() {
-    $("#hideLog").click(function() {
-      if ($("#hideLog").is(":checked")) {
-        HideLog();
-      } else {
-        ShowLog();
-      }
-    });
-  });
-
-  $(function() {
-    $("#hidePopup").click(function() {
-      if ($("#hidePopup").is(":checked")) {
-        HidePopup();
-      } else {
-        ShowPopup();
       }
     });
   });
@@ -100,20 +80,16 @@ window.onload = function() {
     });
   });
 
-  $("#statsBtn").click(function() {
-    BuildStats();
-    statsModal.show();
-    document.querySelector("body").style.overflow = "hidden";
-  });
-
   $("#settingsBtn").click(function() {
     settingsModal.show();
     document.querySelector("body").style.overflow = "hidden";
+    return false;
   });
 
   $("#infoBtn").click(function() {
     infoModal.show();
     document.querySelector("body").style.overflow = "hidden";
+    return false;
   });
 
   $(".closeInfo").each(function() {
@@ -130,13 +106,6 @@ window.onload = function() {
     });
   });
 
-  $(".closeStats").each(function() {
-    $(this).click(function() {
-      statsModal.hide();
-      document.querySelector("body").style.overflow = "auto";
-    });
-  });
-
   $("#backToTop").click(function() {
     document.body.scrollTop = 0;
     document.documentElement.scrollTop = 0;
@@ -149,10 +118,6 @@ window.onload = function() {
     }
     if (event.target == document.getElementById("settingsModal")) {
       settingsModal.hide();
-      document.querySelector("body").style.overflow = "auto";
-    }
-    if (event.target == document.getElementById("statsModal")) {
-      statsModal.hide();
       document.querySelector("body").style.overflow = "auto";
     }
   };
@@ -185,7 +150,6 @@ const db = getDatabase(initializeApp(firebaseConfig));
 
 var wikiHolder = document.getElementById("wikiHolder");
 var guessLogBody = document.getElementById("guessLogBody");
-var statLogBody = document.getElementById("statsTable");
 var baffled = [];
 var guessedWords = [];
 var ans = [];
@@ -211,7 +175,6 @@ var ses;
 var redactleIndex;
 var yesterday;
 var gameID = window.location.hash.slice(1).trim();
-console.log(gameID);
 
 function uuidv4() {
   return ([1e7] + 1e3 + 4e3 + 8e3 + 1e11).replace(/[018]/g, (c) =>
@@ -259,7 +222,9 @@ async function LoadSave() {
   await fetchData(article);
 
   onChildAdded(ref(db, `/${gameID}/guessedWords`), (data) => {
-    PerformGuess(data.val(), true);
+    const word = data.val();
+    guessedWords.push(word);
+    PerformGuess(word, true);
   });
 }
 
@@ -485,15 +450,8 @@ function PerformGuess(guessedWord, populate) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
-  if (commonWords.includes(normGuess)) {
-  } else {
-    var alreadyGuessed = false;
-    for (var i = 0; i < guessedWords.length; i++) {
-      if (guessedWords[i][0] == normGuess) {
-        var alreadyGuessed = true;
-      }
-    }
-    if (!alreadyGuessed || populate) {
+  if (!commonWords.includes(normGuess)) {
+    if (!guessedWords.includes(guessedWord) || populate) {
       var numHits = 0;
       for (var i = 0; i < baffled.length; i++) {
         if (baffled[i][0] == normGuess) {
@@ -541,7 +499,6 @@ function PerformGuess(guessedWord, populate) {
       WinRound(populate);
     }
   }
-  document.getElementById("userGuess").value = "";
 }
 
 function LogGuess(guess, populate) {
@@ -719,23 +676,6 @@ function WinRound(populate) {
   SaveProgress();
 }
 
-function ShareResults() {
-  const shareText =
-    "I solved today's Redactle (#" +
-    (redactleIndex + 1) +
-    ") in " +
-    gameScores[redactleIndex] +
-    " guesses with an accuracy of " +
-    currentAccuracy +
-    "%. Played at https://www.redactle.com/";
-  const copied = ClipboardJS.copy(shareText);
-  if (copied) {
-    alert("Results copied to clipboard. Thanks for playing!");
-  } else {
-    alert("Something went wrong trying to copy results to clipboard.");
-  }
-}
-
 function RevealPage() {
   RemoveHighlights(false);
   for (var i = 0; i < baffled.length; i++) {
@@ -743,27 +683,6 @@ function RevealPage() {
     baffled[i][1].elements[0].element.classList.remove("baffled");
   }
   pageRevealed = true;
-}
-
-function BuildStats() {
-  for (var i = statLogBody.rows.length - 1; i > 0; i--) {
-    statLogBody.deleteRow(i);
-  }
-  for (var i = 0; i < gameWins.length; i++) {
-    if (gameWins[i] == 1) {
-      var statRow = statLogBody.insertRow(1);
-      statRow.innerHTML =
-        "<td>" +
-        (i + 1) +
-        "</td><td>" +
-        gameAnswers[i] +
-        "</td><td>" +
-        gameScores[i] +
-        "</td><td>" +
-        gameAccuracy[i] +
-        "%</td>";
-    }
-  }
 }
 
 function HideZero() {
