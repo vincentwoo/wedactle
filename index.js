@@ -10,6 +10,10 @@ import {
   ref,
   push,
   onChildAdded,
+  query,
+  startAfter,
+  startAt,
+  orderByKey,
 } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
 
 const db = getDatabase(
@@ -42,6 +46,7 @@ var infoModal = new bootstrap.Modal(document.getElementById("infoModal"));
 var settingsModal = new bootstrap.Modal(
   document.getElementById("settingsModal")
 );
+var guessedWordsRef;
 
 function uuidv4() {
   return ([1e7] + 1e3 + 4e3 + 8e3 + 1e11).replace(/[018]/g, (c) =>
@@ -80,10 +85,24 @@ async function LoadSave() {
 
   await fetchData(article);
 
-  onChildAdded(ref(db, `/${gameID}/guessedWords`), (data) => {
-    const word = data.val();
-    guessedWords.push(word);
-    PerformGuess(word, true);
+  guessedWordsRef = ref(db, `/${gameID}/guessedWords`);
+  let lastKey;
+  get(guessedWordsRef).then((snapshot) => {
+    snapshot.forEach((entry) => {
+      lastKey = entry.key;
+      const { word, playerID } = entry.val();
+      guessedWords.push(word);
+      revealWord(word, false); //, true, playerID);
+    });
+
+    onChildAdded(
+      query(guessedWordsRef, orderByKey(), startAfter(lastKey)),
+      (data) => {
+        const { word } = data.val();
+        guessedWords.push(word);
+        revealWord(word, true);
+      }
+    );
   });
 }
 
@@ -283,11 +302,25 @@ async function fetchData(article) {
 }
 LoadSave();
 
-function PerformGuess(guessedWord, populate) {
-  if (!populate) {
-    set(push(ref(db, `/${gameID}/guessedWords`)), guessedWord);
-    return;
+function revealWord(word, highlight = true) {
+  let numHits = 0;
+  for (let i = 0; i < baffled.length; i++) {
+    if (baffled[i][0] == word) {
+      baffled[i][1].reveal();
+      baffled[i][1].elements[0].element.classList.remove("baffled");
+      baffled[i][1].elements[0].element.setAttribute("data-word", word);
+      numHits += 1;
+      if (highlight) {
+        baffled[i][1].elements[0].element.classList.add("highlighted");
+        currentlyHighlighted = word;
+      }
+    }
   }
+  guessedWords.push([word, numHits, guessCounter]);
+  LogGuess([word, numHits, guessedWords.length], highlight);
+}
+
+function PerformGuess(guessedWord) {
   clickThruIndex = 0;
   RemoveHighlights(false);
   var normGuess = guessedWord
@@ -295,29 +328,8 @@ function PerformGuess(guessedWord, populate) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
   if (!commonWords.includes(normGuess)) {
-    if (!guessedWords.includes(guessedWord) || populate) {
-      var numHits = 0;
-      for (var i = 0; i < baffled.length; i++) {
-        if (baffled[i][0] == normGuess) {
-          baffled[i][1].reveal();
-          baffled[i][1].elements[0].element.classList.remove("baffled");
-          baffled[i][1].elements[0].element.setAttribute(
-            "data-word",
-            normGuess
-          );
-          numHits += 1;
-          if (!populate) {
-            baffled[i][1].elements[0].element.classList.add("highlighted");
-            currentlyHighlighted = normGuess;
-          }
-        }
-      }
-      if (!populate) {
-        guessCounter += 1;
-        guessedWords.push([normGuess, numHits, guessCounter]);
-        SaveProgress();
-      }
-      LogGuess([normGuess, numHits, guessCounter], populate);
+    if (!guessedWords.includes(guessedWord)) {
+      push(guessedWordsRef, { playerID, word: normGuess });
     } else {
       $("tr[data-guess='" + normGuess + "']").addClass("table-secondary");
       $("tr[data-guess='" + normGuess + "']")[0].scrollIntoView();
@@ -339,21 +351,21 @@ function PerformGuess(guessedWord, populate) {
       });
     }
     if (ans.length == 0) {
-      WinRound(populate);
+      WinRound();
     }
   }
 }
 
-function LogGuess(guess, populate) {
+function LogGuess(guess, highlight) {
   if (hidingZero) {
     HideZero();
   }
   var newRow = guessLogBody.insertRow(0);
   newRow.class = "curGuess";
   newRow.setAttribute("data-guess", guess[0]);
-  if (!populate) {
-    newRow.classList.add("table-secondary");
-  }
+
+  if (highlight) newRow.classList.add("table-secondary");
+
   if (guess[1] > 0) {
     hitCounter += 1;
   }
@@ -429,16 +441,15 @@ function LogGuess(guess, populate) {
     '</td><td class="tableHits">' +
     guess[1] +
     "</td>";
-  if (!populate) {
-    newRow.scrollIntoView({
-      behavior: "auto",
-      block: "center",
-      inline: "end",
-    });
-  }
+
+  newRow.scrollIntoView({
+    behavior: "auto",
+    block: "center",
+    inline: "end",
+  });
 }
 
-function WinRound(populate) {
+function WinRound() {
   document.getElementById("userGuess").disabled = true;
   if (!pageRevealed) {
     RevealPage();
@@ -592,9 +603,8 @@ window.onload = function() {
           allGuesses.push(singularGuess);
         }
       }
-      for (var i = allGuesses.length - 1; i > -1; i--) {
-        PerformGuess(allGuesses[i], false);
-      }
+      allGuesses.forEach((word) => PerformGuess(word));
+
       pluralizing = false;
       document.getElementById("userGuess").value = "";
     }
