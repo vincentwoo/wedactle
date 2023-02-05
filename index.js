@@ -1,127 +1,5 @@
-// formerly startup.js
-
-var pluralizing;
-var infoModal = new bootstrap.Modal(document.getElementById("infoModal"));
-var settingsModal = new bootstrap.Modal(
-  document.getElementById("settingsModal")
-);
-
-window.onload = function() {
-  var input = document.getElementById("userGuess");
-
-  input.addEventListener("keyup", function(event) {
-    if (event.keyCode === 13 && event.shiftKey) {
-      event.preventDefault();
-      if ($("#autoPlural").is(":checked")) {
-        pluralizing = false;
-      } else {
-        pluralizing = true;
-      }
-      document.getElementById("submitGuess").click();
-    } else {
-      if (event.keyCode === 13) {
-        if ($("#autoPlural").is(":checked")) {
-          pluralizing = true;
-        } else {
-          pluralizing = false;
-        }
-        document.getElementById("submitGuess").click();
-      }
-    }
-  });
-
-  $("#submitGuess").click(function() {
-    if (
-      !document.getElementById("userGuess").value == "" ||
-      !document.getElementById("userGuess").value ==
-        document.getElementById("userGuess").defaultValue
-    ) {
-      var allGuesses = [
-        document.getElementById("userGuess").value.replace(/\s/g, ""),
-      ];
-
-      if (pluralizing) {
-        var pluralGuess = pluralize(allGuesses[0]);
-        var singularGuess = pluralize.singular(allGuesses[0]);
-        if (pluralGuess != allGuesses[0]) {
-          allGuesses.push(pluralGuess);
-        }
-        if (singularGuess != allGuesses[0]) {
-          allGuesses.push(singularGuess);
-        }
-      }
-      for (var i = allGuesses.length - 1; i > -1; i--) {
-        PerformGuess(allGuesses[i], false);
-      }
-      pluralizing = false;
-      document.getElementById("userGuess").value = "";
-    }
-  });
-
-  $(function() {
-    $("#hideZero").click(function() {
-      if ($("#hideZero").is(":checked")) {
-        HideZero();
-      } else {
-        ShowZero();
-      }
-    });
-  });
-
-  $(function() {
-    $("#autoPlural").click(function() {
-      if ($("#autoPlural").is(":checked")) {
-        pluralizing = true;
-        SaveProgress();
-      } else {
-        pluralizing = false;
-        SaveProgress();
-      }
-    });
-  });
-
-  $("#settingsBtn").click(function() {
-    settingsModal.show();
-    document.querySelector("body").style.overflow = "hidden";
-    return false;
-  });
-
-  $("#infoBtn").click(function() {
-    infoModal.show();
-    document.querySelector("body").style.overflow = "hidden";
-    return false;
-  });
-
-  $(".closeInfo").each(function() {
-    $(this).click(function() {
-      infoModal.hide();
-      document.querySelector("body").style.overflow = "auto";
-    });
-  });
-
-  $(".closeSettings").each(function() {
-    $(this).click(function() {
-      settingsModal.hide();
-      document.querySelector("body").style.overflow = "auto";
-    });
-  });
-
-  $("#backToTop").click(function() {
-    document.body.scrollTop = 0;
-    document.documentElement.scrollTop = 0;
-  });
-
-  window.onclick = function(event) {
-    if (event.target == document.getElementById("infoModal")) {
-      infoModal.hide();
-      document.querySelector("body").style.overflow = "auto";
-    }
-    if (event.target == document.getElementById("settingsModal")) {
-      settingsModal.hide();
-      document.querySelector("body").style.overflow = "auto";
-    }
-  };
-};
+// prettier-ignore
+const commonWords = ["a","aboard","about","above","across","after","against","along","amid","among","an","and","around","as","at","because","before","behind","below","beneath","beside","between","beyond","but","by","concerning","considering","despite","down","during","except","following","for","from","if","in","inside","into","is","it","like","minus","near","next","of","off","on","onto","opposite","or","out","outside","over","past","per","plus","regarding","round","save","since","than","the","through","till","to","toward","under","underneath","unlike","until","up","upon","versus","via","was","with","within","without"];
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
@@ -134,19 +12,12 @@ import {
   onChildAdded,
 } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCKuwvb-kN3FgzmGdp-n8KsDcfwsqXyEuM",
-  authDomain: "wedactle.firebaseapp.com",
-  databaseURL: "https://wedactle-default-rtdb.firebaseio.com",
-  projectId: "wedactle",
-  storageBucket: "wedactle.appspot.com",
-  messagingSenderId: "706626123460",
-  appId: "1:706626123460:web:f9f4ffa85d3c01e46d3b91",
-  databaseURL: "https://wedactle-default-rtdb.firebaseio.com",
-};
-
-// Initialize Firebase
-const db = getDatabase(initializeApp(firebaseConfig));
+const db = getDatabase(
+  initializeApp({
+    apiKey: "AIzaSyCKuwvb-kN3FgzmGdp-n8KsDcfwsqXyEuM",
+    databaseURL: "https://wedactle-default-rtdb.firebaseio.com",
+  })
+);
 
 var wikiHolder = document.getElementById("wikiHolder");
 var guessLogBody = document.getElementById("guessLogBody");
@@ -158,23 +29,19 @@ var guessCounter = 0;
 var hidingZero = false;
 var hidingLog = false;
 var currentlyHighlighted;
-var gameWins = [];
-var gameScores = [];
-var gameAccuracy = [];
-var gameAnswers = [];
 var hitCounter = 0;
 var currentAccuracy = -1;
 var save = {};
 var pageRevealed = false;
 var clickThruIndex = 0;
 var clickThruNodes = [];
-var redirectable;
-var conting;
 var playerID;
-var ses;
-var redactleIndex;
-var yesterday;
 var gameID = window.location.hash.slice(1).trim();
+var pluralizing;
+var infoModal = new bootstrap.Modal(document.getElementById("infoModal"));
+var settingsModal = new bootstrap.Modal(
+  document.getElementById("settingsModal")
+);
 
 function uuidv4() {
   return ([1e7] + 1e3 + 4e3 + 8e3 + 1e11).replace(/[018]/g, (c) =>
@@ -191,14 +58,6 @@ async function LoadSave() {
     playerID = uuidv4();
     save = JSON.parse(
       JSON.stringify({
-        saveData: {
-          redactleIndex,
-          guessedWords,
-          gameWins,
-          gameScores,
-          gameAccuracy,
-          gameAnswers,
-        },
         prefs: { hidingZero, hidingLog, pluralizing },
         id: { playerID },
       })
@@ -419,17 +278,6 @@ async function fetchData(article) {
         ShowZero();
       }
 
-      if (redactleIndex > 0) {
-        document.getElementById(
-          "yesterday"
-        ).innerHTML = `The answer to yesterday's Redactle was: ${atob(yesterday)
-          .replace(/ *\([^)]*\) */g, "")
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/_/g, " ")
-          .toLowerCase()}`;
-      }
-
       wikiHolder.style.display = "flex";
     })
     .catch((err) => {
@@ -468,7 +316,6 @@ function PerformGuess(guessedWord, populate) {
           }
         }
       }
-      save.saveData.guessedWords = guessedWords;
       if (!populate) {
         guessCounter += 1;
         guessedWords.push([normGuess, numHits, guessCounter]);
@@ -599,21 +446,6 @@ function WinRound(populate) {
   document.getElementById("userGuess").disabled = true;
   if (!pageRevealed) {
     RevealPage();
-    if (!populate) {
-      gameScores[redactleIndex] = guessedWords.length;
-      gameAccuracy[redactleIndex] = currentAccuracy;
-      gameAnswers[redactleIndex] = ansStr;
-      gameWins[redactleIndex] = 1;
-    }
-  }
-  var streakCount = 0;
-  for (var i = gameWins.length; i > -1; i--) {
-    if (gameWins[i] == 1) {
-      streakCount += 1;
-    }
-    if (gameWins[i] == 0) {
-      break;
-    }
   }
   var vicData;
   // $.ajax({
@@ -728,12 +560,125 @@ function SaveProgress() {
   } else {
     pluralizing = false;
   }
-  save.saveData.guessedWords = guessedWords;
-  save.saveData.gameWins = gameWins;
-  save.saveData.gameScores = gameScores;
-  save.saveData.gameAccuracy = gameAccuracy;
   save.prefs.hidingZero = hidingZero;
   save.prefs.hidingLog = hidingLog;
   save.prefs.pluralizing = pluralizing;
   localStorage.setItem("redactleSavet", JSON.stringify(save));
 }
+
+window.onload = function() {
+  var input = document.getElementById("userGuess");
+
+  input.addEventListener("keyup", function(event) {
+    if (event.keyCode === 13 && event.shiftKey) {
+      event.preventDefault();
+      if ($("#autoPlural").is(":checked")) {
+        pluralizing = false;
+      } else {
+        pluralizing = true;
+      }
+      document.getElementById("submitGuess").click();
+    } else {
+      if (event.keyCode === 13) {
+        if ($("#autoPlural").is(":checked")) {
+          pluralizing = true;
+        } else {
+          pluralizing = false;
+        }
+        document.getElementById("submitGuess").click();
+      }
+    }
+  });
+
+  $("#submitGuess").click(function() {
+    if (
+      !document.getElementById("userGuess").value == "" ||
+      !document.getElementById("userGuess").value ==
+        document.getElementById("userGuess").defaultValue
+    ) {
+      var allGuesses = [
+        document.getElementById("userGuess").value.replace(/\s/g, ""),
+      ];
+
+      if (pluralizing) {
+        var pluralGuess = pluralize(allGuesses[0]);
+        var singularGuess = pluralize.singular(allGuesses[0]);
+        if (pluralGuess != allGuesses[0]) {
+          allGuesses.push(pluralGuess);
+        }
+        if (singularGuess != allGuesses[0]) {
+          allGuesses.push(singularGuess);
+        }
+      }
+      for (var i = allGuesses.length - 1; i > -1; i--) {
+        PerformGuess(allGuesses[i], false);
+      }
+      pluralizing = false;
+      document.getElementById("userGuess").value = "";
+    }
+  });
+
+  $(function() {
+    $("#hideZero").click(function() {
+      if ($("#hideZero").is(":checked")) {
+        HideZero();
+      } else {
+        ShowZero();
+      }
+    });
+  });
+
+  $(function() {
+    $("#autoPlural").click(function() {
+      if ($("#autoPlural").is(":checked")) {
+        pluralizing = true;
+        SaveProgress();
+      } else {
+        pluralizing = false;
+        SaveProgress();
+      }
+    });
+  });
+
+  $("#settingsBtn").click(function() {
+    settingsModal.show();
+    document.querySelector("body").style.overflow = "hidden";
+    return false;
+  });
+
+  $("#infoBtn").click(function() {
+    infoModal.show();
+    document.querySelector("body").style.overflow = "hidden";
+    return false;
+  });
+
+  $(".closeInfo").each(function() {
+    $(this).click(function() {
+      infoModal.hide();
+      document.querySelector("body").style.overflow = "auto";
+    });
+  });
+
+  $(".closeSettings").each(function() {
+    $(this).click(function() {
+      settingsModal.hide();
+      document.querySelector("body").style.overflow = "auto";
+    });
+  });
+
+  $("#backToTop").click(function() {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  });
+
+  window.onclick = function(event) {
+    if (event.target == document.getElementById("infoModal")) {
+      infoModal.hide();
+      document.querySelector("body").style.overflow = "auto";
+    }
+    if (event.target == document.getElementById("settingsModal")) {
+      settingsModal.hide();
+      document.querySelector("body").style.overflow = "auto";
+    }
+  };
+};
