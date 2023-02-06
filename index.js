@@ -1,6 +1,6 @@
 // prettier-ignore
 const commonWords = ["a","aboard","about","above","across","after","against","along","amid","among","an","and","around","as","at","because","before","behind","below","beneath","beside","between","beyond","but","by","concerning","considering","despite","down","during","except","following","for","from","if","in","inside","into","is","it","like","minus","near","next","of","off","on","onto","opposite","or","out","outside","over","past","per","plus","regarding","round","save","since","than","the","through","till","to","toward","under","underneath","unlike","until","up","upon","versus","via","was","with","within","without"];
-
+const startTime = Date.now();
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
 import {
@@ -60,6 +60,7 @@ function uuidv4() {
 }
 
 async function LoadSave() {
+  console.log(`${Date.now() - startTime}: LoadSave`);
   if (localStorage.getItem("redactleSavet") === null) {
     localStorage.clear();
     playerID = uuidv4();
@@ -87,10 +88,12 @@ async function LoadSave() {
 
   guessedWordsRef = ref(db, `/${gameID}/guessedWords`);
 
+  console.log(`${Date.now() - startTime}: Begin dual await`);
   let [snapshot, _] = await Promise.all([
     get(guessedWordsRef),
     fetchData(article),
   ]);
+  console.log(`${Date.now() - startTime}: Dual await complete`);
 
   let lastKey = null;
 
@@ -274,12 +277,8 @@ async function fetchData(article) {
           var txt = this.innerHTML.normalizeGuess();
           if (!commonWords.includes(txt)) {
             this.classList.toggle("baffled");
-            let b = baffle(this)
-              .once()
-              .set({
-                characters: "abcd",
-              });
-            baffled.push([txt, b]);
+            this.innerHTML = "&nbsp;".repeat(txt.length);
+            baffled.push([txt, this]);
           }
         });
 
@@ -306,12 +305,12 @@ function revealWord(word, highlight = true) {
   let numHits = 0;
   for (let i = 0; i < baffled.length; i++) {
     if (baffled[i][0] == word) {
-      baffled[i][1].reveal();
-      baffled[i][1].elements[0].element.classList.remove("baffled");
-      baffled[i][1].elements[0].element.setAttribute("data-word", word);
+      baffled[i][1].classList.remove("baffled");
+      baffled[i][1].setAttribute("data-word", word);
+      baffled[i][1].innerText = word;
       numHits += 1;
       if (highlight) {
-        baffled[i][1].elements[0].element.classList.add("highlighted");
+        baffled[i][1].classList.add("highlighted");
         currentlyHighlighted = word;
       }
     }
@@ -484,8 +483,8 @@ function WinRound() {
 function RevealPage() {
   RemoveHighlights(false);
   for (var i = 0; i < baffled.length; i++) {
-    baffled[i][1].reveal();
-    baffled[i][1].elements[0].element.classList.remove("baffled");
+    baffled[i][1].classList.remove("baffled");
+    baffled[i][1].innerText = word;
   }
   pageRevealed = true;
 }
