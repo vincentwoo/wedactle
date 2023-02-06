@@ -25,7 +25,7 @@ const db = getDatabase(
 
 var wikiHolder = document.getElementById("wikiHolder");
 var guessLogBody = document.getElementById("guessLogBody");
-var baffled = [];
+var baffled = {};
 var guessedWords = [];
 var ans = [];
 var hidingZero = false;
@@ -279,7 +279,8 @@ async function fetchData(article) {
             this.classList.toggle("baffled");
             const original = this.innerText;
             this.innerHTML = "&nbsp;".repeat(txt.length);
-            baffled.push([txt, this, original]);
+            baffled[txt] = baffled[txt] || [];
+            baffled[txt].push([this, original]);
           }
         });
 
@@ -304,17 +305,18 @@ LoadSave();
 
 function revealWord(word, highlight = true) {
   let numHits = 0;
-  for (let i = 0; i < baffled.length; i++) {
-    if (baffled[i][0] == word) {
-      baffled[i][1].classList.remove("baffled");
-      baffled[i][1].setAttribute("data-word", word);
-      baffled[i][1].innerText = baffled[i][2];
+  if (baffled[word]) {
+    for (const [elem, original] of baffled[word]) {
+      elem.classList.remove("baffled");
+      elem.setAttribute("data-word", word);
+      elem.innerText = original;
       numHits += 1;
       if (highlight) {
-        baffled[i][1].classList.add("highlighted");
+        elem.classList.add("highlighted");
         currentlyHighlighted = word;
       }
     }
+    delete baffled[word];
   }
   guessedWords.push(word);
   LogGuess([word, numHits, guessedWords.length], highlight);
@@ -425,9 +427,9 @@ function WinRound() {
 
 function RevealPage() {
   RemoveHighlights(false);
-  for (var i = 0; i < baffled.length; i++) {
-    baffled[i][1].classList.remove("baffled");
-    baffled[i][1].innerText = baffled[i][2];
+  for (const [elem, original] of Object.values(baffled).flat()) {
+    elem.classList.remove("baffled");
+    elem.innerText = original;
   }
   pageRevealed = true;
 }
