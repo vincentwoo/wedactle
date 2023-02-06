@@ -28,13 +28,9 @@ var guessLogBody = document.getElementById("guessLogBody");
 var baffled = [];
 var guessedWords = [];
 var ans = [];
-var ansStr;
-var guessCounter = 0;
 var hidingZero = false;
 var hidingLog = false;
 var currentlyHighlighted;
-var hitCounter = 0;
-var currentAccuracy = -1;
 var save = {};
 var pageRevealed = false;
 var clickThruIndex = 0;
@@ -47,6 +43,12 @@ var settingsModal = new bootstrap.Modal(
   document.getElementById("settingsModal")
 );
 var guessedWordsRef;
+
+String.prototype.normalizeGuess = function() {
+  return this.normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+};
 
 function uuidv4() {
   return ([1e7] + 1e3 + 4e3 + 8e3 + 1e11).replace(/[018]/g, (c) =>
@@ -83,27 +85,30 @@ async function LoadSave() {
     article = (await get(ref(db, `/${gameID}/article`))).val();
   }
 
-  await fetchData(article);
-
   guessedWordsRef = ref(db, `/${gameID}/guessedWords`);
-  let lastKey;
-  get(guessedWordsRef).then((snapshot) => {
-    snapshot.forEach((entry) => {
-      lastKey = entry.key;
-      const { word, playerID } = entry.val();
-      guessedWords.push(word);
-      revealWord(word, false); //, true, playerID);
-    });
 
-    onChildAdded(
-      query(guessedWordsRef, orderByKey(), startAfter(lastKey)),
-      (data) => {
-        const { word } = data.val();
-        guessedWords.push(word);
-        revealWord(word, true);
-      }
-    );
+  let [snapshot, _] = await Promise.all([
+    get(guessedWordsRef),
+    fetchData(article),
+  ]);
+
+  let lastKey = null;
+
+  snapshot.forEach((entry) => {
+    lastKey = entry.key;
+    const { word, playerID } = entry.val();
+    revealWord(word, false); //, true, playerID);
   });
+
+  onChildAdded(
+    lastKey
+      ? query(guessedWordsRef, orderByKey(), startAfter(lastKey))
+      : guessedWordsRef,
+    (data) => {
+      const { word } = data.val();
+      revealWord(word, true);
+    }
+  );
 }
 
 async function getRandomArticle() {
@@ -211,15 +216,13 @@ async function fetchData(article) {
       var titleTxt = article.replace(/_/g, " ");
       titleHolder.innerHTML = titleTxt;
       e[0].prepend(titleHolder);
-      ansStr = titleTxt
+      ans = titleTxt
         .replace(/ *\([^)]*\) */g, "")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase();
-      ans = ansStr.match(/\b(\w+)\b/g);
-      ans = ans.filter(function(el) {
-        return commonWords.indexOf(el) < 0;
-      });
+        .normalizeGuess()
+        .match(/\b(\w+)\b/g)
+        .filter(function(el) {
+          return commonWords.indexOf(el) < 0;
+        });
       e[0].innerHTML = e[0].innerHTML
         .replace(/\(; /g, "(")
         .replace(/\(, /g, "(")
@@ -268,10 +271,7 @@ async function fetchData(article) {
       $(".mw-parser-output span")
         .not(".punctuation")
         .each(function() {
-          var txt = this.innerHTML
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase();
+          var txt = this.innerHTML.normalizeGuess();
           if (!commonWords.includes(txt)) {
             this.classList.toggle("baffled");
             let b = baffle(this)
@@ -316,43 +316,28 @@ function revealWord(word, highlight = true) {
       }
     }
   }
-  guessedWords.push([word, numHits, guessCounter]);
+  guessedWords.push(word);
   LogGuess([word, numHits, guessedWords.length], highlight);
+  ans = ans.filter((_word) => _word != word);
+  if (ans.length == 0) WinRound();
 }
 
 function PerformGuess(guessedWord) {
   clickThruIndex = 0;
   RemoveHighlights(false);
-  var normGuess = guessedWord
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-  if (!commonWords.includes(normGuess)) {
-    if (!guessedWords.includes(guessedWord)) {
-      push(guessedWordsRef, { playerID, word: normGuess });
-    } else {
-      $("tr[data-guess='" + normGuess + "']").addClass("table-secondary");
-      $("tr[data-guess='" + normGuess + "']")[0].scrollIntoView();
-      currentlyHighlighted = normGuess;
-      $(".innerTxt").each(function() {
-        if (
-          this.innerHTML
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase() == normGuess
-        ) {
-          this.classList.add("highlighted");
-        }
-      });
-    }
-    if (ans.includes(normGuess)) {
-      ans = ans.filter(function(e) {
-        return e !== normGuess;
-      });
-    }
-    if (ans.length == 0) {
-      WinRound();
-    }
+  var normGuess = guessedWord.normalizeGuess();
+  if (commonWords.includes(normGuess)) return;
+  if (!guessedWords.includes(guessedWord)) {
+    push(guessedWordsRef, { playerID, word: normGuess });
+  } else {
+    $("tr[data-guess='" + normGuess + "']").addClass("table-secondary");
+    $("tr[data-guess='" + normGuess + "']")[0].scrollIntoView();
+    currentlyHighlighted = normGuess;
+    $(".innerTxt").each(function() {
+      if (this.innerHTML.normalizeGuess() == normGuess) {
+        this.classList.add("highlighted");
+      }
+    });
   }
 }
 
@@ -367,18 +352,9 @@ function LogGuess(guess, highlight) {
   if (highlight) newRow.classList.add("table-secondary");
 
   if (guess[1] > 0) {
-    hitCounter += 1;
-  }
-  if (!pageRevealed) {
-    currentAccuracy = ((hitCounter / guessedWords.length) * 100).toFixed(2);
-  }
-  if (guess[1] > 0) {
     $(newRow).on("click", function(e) {
       e.preventDefault();
-      var inTxt = this.getElementsByTagName("td")[1]
-        .innerHTML.normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase();
+      var inTxt = this.getElementsByTagName("td")[1].innerHTML.normalizeGuess();
       const allInstances = wikiHolder.querySelectorAll(
         '[data-word="' + inTxt + '"]'
       );
@@ -387,12 +363,7 @@ function LogGuess(guess, highlight) {
         currentlyHighlighted = inTxt;
         this.classList.add("table-secondary");
         $(".innerTxt").each(function() {
-          if (
-            this.innerHTML
-              .normalize("NFD")
-              .replace(/[\u0300-\u036f]/g, "")
-              .toLowerCase() == currentlyHighlighted
-          ) {
+          if (this.innerHTML.normalizeGuess() == currentlyHighlighted) {
             $(this).addClass("highlighted");
           }
         });
@@ -403,12 +374,7 @@ function LogGuess(guess, highlight) {
           RemoveHighlights(false);
           this.classList.add("table-secondary");
           $(".innerTxt").each(function() {
-            if (
-              this.innerHTML
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
-                .toLowerCase() == inTxt
-            ) {
+            if (this.innerHTML.normalizeGuess() == inTxt) {
               this.classList.add("highlighted");
             }
           });
