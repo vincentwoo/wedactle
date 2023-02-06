@@ -63,17 +63,17 @@ async function LoadSave() {
   if (localStorage.getItem("redactleSavet") === null) {
     localStorage.clear();
     playerID = uuidv4();
-    save = JSON.parse(
-      JSON.stringify({
-        prefs: { hidingZero, hidingLog, pluralizing },
-        id: { playerID },
-      })
-    );
+    save = {
+      prefs: { hidingZero, hidingLog, pluralizing },
+      id: { playerID },
+    };
+    localStorage.setItem("redactleSavet", JSON.stringify(save));
   } else {
     save = JSON.parse(localStorage.getItem("redactleSavet"));
   }
-  localStorage.setItem("redactleSavet", JSON.stringify(save));
   playerID = save.id.playerID;
+  hidingZero = save.prefs.hidingZero;
+  pluralizing = save.prefs.pluralizing;
 
   let article;
   if (gameID == "") {
