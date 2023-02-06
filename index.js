@@ -34,7 +34,6 @@ var currentlyHighlighted;
 var save = {};
 var pageRevealed = false;
 var clickThruIndex = 0;
-var clickThruNodes = [];
 var playerID;
 var gameID = window.location.hash.slice(1).trim();
 var pluralizing;
@@ -76,6 +75,7 @@ async function LoadSave() {
   hidingZero = save.prefs.hidingZero;
   pluralizing = save.prefs.pluralizing;
 
+  console.log(`${Date.now() - startTime}: Get article`);
   let article;
   if (gameID == "") {
     gameID = uuidv4();
