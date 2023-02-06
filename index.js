@@ -274,11 +274,12 @@ async function fetchData(article) {
       $(".mw-parser-output span")
         .not(".punctuation")
         .each(function() {
-          var txt = this.innerHTML.normalizeGuess();
+          const txt = this.innerHTML.normalizeGuess();
           if (!commonWords.includes(txt)) {
             this.classList.toggle("baffled");
+            const original = this.innerText;
             this.innerHTML = "&nbsp;".repeat(txt.length);
-            baffled.push([txt, this]);
+            baffled.push([txt, this, original]);
           }
         });
 
@@ -307,7 +308,7 @@ function revealWord(word, highlight = true) {
     if (baffled[i][0] == word) {
       baffled[i][1].classList.remove("baffled");
       baffled[i][1].setAttribute("data-word", word);
-      baffled[i][1].innerText = word;
+      baffled[i][1].innerText = baffled[i][2];
       numHits += 1;
       if (highlight) {
         baffled[i][1].classList.add("highlighted");
@@ -419,64 +420,6 @@ function WinRound() {
   if (!pageRevealed) {
     RevealPage();
   }
-  var vicData;
-  // $.ajax({
-  //     type: "POST",
-  //     url: "/vic.php",
-  //     dataType: "text",
-  //     data: {
-  //         playerID: String(playerID),
-  //         currentRedactle: redactleIndex,
-  //         score: guessedWords.length,
-  //         accuracy: parseInt(currentAccuracy * 100),
-  //         token: token,
-  //     },
-  //     success: function(data) {
-  //         vicData = JSON.parse(data);
-  //     },
-  //     error: function() {
-  //         document.getElementById(
-  //             "winText"
-  //         ).innerHTML = `<h3>Congratulations, you solved Redactle #${redactleIndex +
-  //             1}!</h3><ul><li>The answer was: ${ansStr}</li><li>You solved it in ${
-  //             gameScores[redactleIndex]
-  //         } guesses</li><li>Your accuracy was ${currentAccuracy}%</li><li>You have solved ${streakCount} consecutive Redactles</li></ul><p><a href="javascript:ShareResults();">Share your results</a></p>`;
-  //         document.getElementById("winText").style.display = "block";
-  //     },
-  // }).then(function() {
-  //     var globalStr;
-  //     switch (vicData.length) {
-  //         case 1:
-  //             globalStr = "You are the only player to solve today's Redactle";
-  //         default:
-  //             globalStr = `Globally, ${
-  //                 vicData.length
-  //             } players have solved today's Redactle`;
-  //     }
-  //     var scores = [];
-  //     var accs = [];
-  //     for (var sc in vicData) {
-  //         scores.push(vicData[sc].score);
-  //         accs.push(vicData[sc].accuracy);
-  //     }
-
-  //     document.getElementById(
-  //         "winText"
-  //     ).innerHTML = `<h3>Congratulations, you solved Redactle #${redactleIndex +
-  //         1}!</h3><ul><li>The answer was: ${ansStr}</li><li>You solved it in ${
-  //         gameScores[redactleIndex]
-  //     } guesses</li><li>Your accuracy was ${currentAccuracy}%</li><li>You have solved ${streakCount} consecutive Redactles</li></ul><h3>Global Stats</h3><ul><li>${globalStr} so far</li><li>Global Median: ${median(
-  //         scores
-  //     ).toFixed(2)} Guesses; ${(median(accs) / 100).toFixed(
-  //         2
-  //     )}% Accuracy</li><li>Global Average: ${average(scores).toFixed(
-  //         2
-  //     )} Guesses; ${(average(accs) / 100).toFixed(
-  //         2
-  //     )}% Accuracy</li></ul><p><a href="javascript:ShareResults();">Share your results</a></p>`;
-  //     document.getElementById("winText").style.display = "block";
-  // });
-
   SaveProgress();
 }
 
@@ -484,7 +427,7 @@ function RevealPage() {
   RemoveHighlights(false);
   for (var i = 0; i < baffled.length; i++) {
     baffled[i][1].classList.remove("baffled");
-    baffled[i][1].innerText = word;
+    baffled[i][1].innerText = baffled[i][2];
   }
   pageRevealed = true;
 }
