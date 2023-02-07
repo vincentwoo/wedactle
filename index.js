@@ -43,6 +43,19 @@ var settingsModal = new bootstrap.Modal(
 );
 var guessedWordsRef;
 
+const colors = [
+  "#ffadad",
+  "#ffd6a5",
+  "#caffbf",
+  "#9bf6ff",
+  "#bdb2ff",
+  "#fffffc",
+  "#a0c4ff",
+  "#ffc6ff",
+  "#fdffb6",
+];
+const playerMappings = {};
+
 String.prototype.normalizeGuess = function() {
   return this.normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -298,13 +311,38 @@ async function fetchData(article) {
 }
 LoadGame();
 
-function revealWord(word, highlight = true) {
+function PerformGuess(guess) {
+  clickThruIndex = 0;
+  RemoveHighlights(false);
+  guess = guess.normalizeGuess();
+  if (commonWords.includes(guess)) return;
+  if (!guessedWords.includes(guess)) {
+    push(guessedWordsRef, { playerID, word: guess });
+  } else {
+    $(`tr[data-word='${guess}']`).addClass("table-secondary");
+    $(`tr[data-word='${guess}']`)[0].scrollIntoView();
+    currentlyHighlighted = guess;
+    $(".innerTxt").each(function() {
+      if (this.innerHTML.normalizeGuess() == guess) {
+        this.classList.add("highlighted");
+      }
+    });
+  }
+}
+
+function revealWord(word, highlight, playerID) {
+  if (!playerMappings[playerID]) {
+    playerMappings[playerID] =
+      colors[Object.keys(playerMappings).length % colors.length];
+  }
+  console.log(playerMappings);
   let numHits = 0;
   if (baffled[word]) {
     for (const [elem, original] of baffled[word]) {
       elem.classList.remove("baffled");
       elem.setAttribute("data-word", word);
       elem.innerText = original;
+      elem.style.color = playerMappings[playerID];
       numHits += 1;
       if (highlight) {
         elem.classList.add("highlighted");
@@ -314,44 +352,27 @@ function revealWord(word, highlight = true) {
     delete baffled[word];
   }
   guessedWords.push(word);
-  LogGuess([word, numHits, guessedWords.length], highlight);
+  LogGuess(word, numHits, highlight, playerID);
   ans = ans.filter((_word) => _word != word);
   if (ans.length == 0) WinRound();
 }
 
-function PerformGuess(guessedWord) {
-  clickThruIndex = 0;
-  RemoveHighlights(false);
-  var normGuess = guessedWord.normalizeGuess();
-  if (commonWords.includes(normGuess)) return;
-  if (!guessedWords.includes(guessedWord)) {
-    push(guessedWordsRef, { playerID, word: normGuess });
-  } else {
-    $(`tr[data-word='${normGuess}']`).addClass("table-secondary");
-    $(`tr[data-word='${normGuess}']`)[0].scrollIntoView();
-    currentlyHighlighted = normGuess;
-    $(".innerTxt").each(function() {
-      if (this.innerHTML.normalizeGuess() == normGuess) {
-        this.classList.add("highlighted");
-      }
-    });
-  }
-}
-
-function LogGuess(guess, highlight) {
+function LogGuess(guess, numHits, highlight, playerID) {
   if (hidingZero) {
     HideZero();
   }
   var newRow = guessLogBody.insertRow(0);
   newRow.class = "curGuess";
-  newRow.setAttribute("data-word", guess[0]);
-  newRow.setAttribute("data-hits", guess[1]);
+  newRow.setAttribute("data-word", guess);
+  newRow.setAttribute("data-hits", numHits);
 
   if (highlight) newRow.classList.add("table-secondary");
 
-  newRow.innerHTML = `<td>${guess[2]}</td><td>${
-    guess[0]
-  }</td><td class="tableHits">${guess[1]}</td>`;
+  newRow.innerHTML = `<td>${
+    guessedWords.length
+  }</td><td>${guess}</td><td class="tableHits">${numHits}</td>`;
+
+  newRow.children[1].style.color = playerMappings[playerID];
 
   newRow.scrollIntoView({
     behavior: "auto",
@@ -437,11 +458,7 @@ window.onload = function() {
   });
 
   $("#submitGuess").click(function() {
-    if (
-      !document.getElementById("userGuess").value == "" ||
-      !document.getElementById("userGuess").value ==
-        document.getElementById("userGuess").defaultValue
-    ) {
+    if (document.getElementById("userGuess").value != "") {
       var allGuesses = [
         document.getElementById("userGuess").value.replace(/\s/g, ""),
       ];
