@@ -97,6 +97,7 @@ async function LoadGame() {
     set(ref(db, `/${gameID}/article`), article);
   } else {
     article = (await get(ref(db, `/${gameID}/article`))).val();
+    if (!article) article = await getRandomArticle();
   }
 
   guessedWordsRef = ref(db, `/${gameID}/guessedWords`);
@@ -128,11 +129,17 @@ async function LoadGame() {
 }
 
 async function getRandomArticle() {
-  return await fetch(
-    "https://randomincategory.toolforge.org/?category=All%20Wikipedia%20level-4%20vital%20articles&server=en.wikipedia.org&returntype=subject&debug=true"
-  )
-    .text()
-    .match(/Location: https:\/\/en.wikipedia.org\/wiki\/(.*)<br>/)[1];
+  try {
+    const resp = await fetch(
+      "https://randomincategory.toolforge.org/?category=All%20Wikipedia%20level-4%20vital%20articles&server=en.wikipedia.org&returntype=subject&debug=true"
+    );
+    const text = await resp.text();
+    return text.match(
+      /Location: https:\/\/en.wikipedia.org\/wiki\/(.*)<br>/
+    )[1];
+  } catch {
+    return getRandomArticle();
+  }
 }
 
 async function fetchData(article) {
