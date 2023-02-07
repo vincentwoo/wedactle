@@ -58,8 +58,8 @@ function uuidv4() {
   );
 }
 
-async function LoadSave() {
-  console.log(`${Date.now() - startTime}: LoadSave`);
+async function LoadGame() {
+  console.log(`${Date.now() - startTime}: LoadGame`);
   if (localStorage.getItem("redactleSavet") === null) {
     localStorage.clear();
     playerID = uuidv4();
@@ -100,7 +100,7 @@ async function LoadSave() {
   snapshot.forEach((entry) => {
     lastKey = entry.key;
     const { word, playerID } = entry.val();
-    revealWord(word, false); //, true, playerID);
+    revealWord(word, false, playerID);
   });
 
   onChildAdded(
@@ -108,28 +108,23 @@ async function LoadSave() {
       ? query(guessedWordsRef, orderByKey(), startAfter(lastKey))
       : guessedWordsRef,
     (data) => {
-      const { word } = data.val();
-      revealWord(word, true);
+      const { word, playerID } = data.val();
+      revealWord(word, true, playerID);
     }
   );
 }
 
 async function getRandomArticle() {
-  const randomURL =
-    "https://randomincategory.toolforge.org/?category=All%20Wikipedia%20level-4%20vital%20articles&server=en.wikipedia.org&returntype=subject&debug=true";
-  const resp = await fetch(randomURL);
-  const text = await resp.text();
-  return text
-    .split("<br>")
-    .at(-2)
-    .split("Location: https://en.wikipedia.org/wiki/")[1];
+  return await fetch(
+    "https://randomincategory.toolforge.org/?category=All%20Wikipedia%20level-4%20vital%20articles&server=en.wikipedia.org&returntype=subject&debug=true"
+  )
+    .text()
+    .match(/Location: https:\/\/en.wikipedia.org\/wiki\/(.*)<br>/)[1];
 }
 
 async function fetchData(article) {
   return await fetch(
-    "https://en.wikipedia.org/w/api.php?action=parse&format=json&page=" +
-      article +
-      "&prop=text&formatversion=2&origin=*"
+    `https://en.wikipedia.org/w/api.php?action=parse&format=json&page=${article}&prop=text&formatversion=2&origin=*`
   )
     .then((resp) => {
       if (!resp.ok) {
@@ -301,7 +296,7 @@ async function fetchData(article) {
       alert("Something went wrong while loading the page. Try refreshing.");
     });
 }
-LoadSave();
+LoadGame();
 
 function revealWord(word, highlight = true) {
   let numHits = 0;
@@ -332,8 +327,8 @@ function PerformGuess(guessedWord) {
   if (!guessedWords.includes(guessedWord)) {
     push(guessedWordsRef, { playerID, word: normGuess });
   } else {
-    $("tr[data-guess='" + normGuess + "']").addClass("table-secondary");
-    $("tr[data-guess='" + normGuess + "']")[0].scrollIntoView();
+    $(`tr[data-word='${normGuess}']`).addClass("table-secondary");
+    $(`tr[data-word='${normGuess}']`)[0].scrollIntoView();
     currentlyHighlighted = normGuess;
     $(".innerTxt").each(function() {
       if (this.innerHTML.normalizeGuess() == normGuess) {
@@ -349,66 +344,14 @@ function LogGuess(guess, highlight) {
   }
   var newRow = guessLogBody.insertRow(0);
   newRow.class = "curGuess";
-  newRow.setAttribute("data-guess", guess[0]);
+  newRow.setAttribute("data-word", guess[0]);
+  newRow.setAttribute("data-hits", guess[1]);
 
   if (highlight) newRow.classList.add("table-secondary");
 
-  if (guess[1] > 0) {
-    $(newRow).on("click", function(e) {
-      e.preventDefault();
-      var inTxt = this.getElementsByTagName("td")[1].innerHTML.normalizeGuess();
-      const allInstances = wikiHolder.querySelectorAll(
-        '[data-word="' + inTxt + '"]'
-      );
-      if (currentlyHighlighted == null) {
-        clickThruIndex = 0;
-        currentlyHighlighted = inTxt;
-        this.classList.add("table-secondary");
-        $(".innerTxt").each(function() {
-          if (this.innerHTML.normalizeGuess() == currentlyHighlighted) {
-            $(this).addClass("highlighted");
-          }
-        });
-      } else {
-        if (inTxt == currentlyHighlighted) {
-        } else {
-          clickThruIndex = 0;
-          RemoveHighlights(false);
-          this.classList.add("table-secondary");
-          $(".innerTxt").each(function() {
-            if (this.innerHTML.normalizeGuess() == inTxt) {
-              this.classList.add("highlighted");
-            }
-          });
-          currentlyHighlighted = inTxt;
-        }
-      }
-      $(".superHighlighted").each(function() {
-        this.classList.remove("superHighlighted");
-      });
-      allInstances[clickThruIndex % allInstances.length].classList.add(
-        "superHighlighted"
-      );
-      allInstances[clickThruIndex % allInstances.length].scrollIntoView({
-        behavior: "auto",
-        block: "center",
-        inline: "end",
-      });
-      clickThruIndex += 1;
-    });
-  } else {
-    $(newRow).on("click", function(e) {
-      RemoveHighlights(true);
-    });
-  }
-  newRow.innerHTML =
-    "<td>" +
-    guess[2] +
-    "</td><td>" +
-    guess[0] +
-    '</td><td class="tableHits">' +
-    guess[1] +
-    "</td>";
+  newRow.innerHTML = `<td>${guess[2]}</td><td>${
+    guess[0]
+  }</td><td class="tableHits">${guess[1]}</td>`;
 
   newRow.scrollIntoView({
     behavior: "auto",
@@ -577,4 +520,51 @@ window.onload = function() {
       document.querySelector("body").style.overflow = "auto";
     }
   };
+
+  $("#tableHolder").on("click", "tr", function(e) {
+    e.preventDefault();
+    const word = $(this).data("word");
+    const hits = $(this).data("hits");
+
+    if (hits > 0) {
+      const allInstances = wikiHolder.querySelectorAll(`[data-word="${word}"]`);
+      if (currentlyHighlighted == null) {
+        clickThruIndex = 0;
+        currentlyHighlighted = word;
+        this.classList.add("table-secondary");
+        $(".innerTxt").each(function() {
+          if (this.innerHTML.normalizeGuess() == currentlyHighlighted) {
+            $(this).addClass("highlighted");
+          }
+        });
+      } else {
+        if (word == currentlyHighlighted) {
+        } else {
+          clickThruIndex = 0;
+          RemoveHighlights(false);
+          this.classList.add("table-secondary");
+          $(".innerTxt").each(function() {
+            if (this.innerHTML.normalizeGuess() == word) {
+              this.classList.add("highlighted");
+            }
+          });
+          currentlyHighlighted = word;
+        }
+      }
+      $(".superHighlighted").each(function() {
+        this.classList.remove("superHighlighted");
+      });
+      allInstances[clickThruIndex % allInstances.length].classList.add(
+        "superHighlighted"
+      );
+      allInstances[clickThruIndex % allInstances.length].scrollIntoView({
+        behavior: "auto",
+        block: "center",
+        inline: "end",
+      });
+      clickThruIndex += 1;
+    } else {
+      RemoveHighlights(true);
+    }
+  });
 };
