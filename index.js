@@ -170,21 +170,18 @@ async function fetchData(article) {
         )[0].firstChild.firstChild.innerHTML.replace(/ /g, "_");
         return fetchData(redirURL);
       }
-      if (document.getElementById("See_also") != null) {
-        var seeAlso = document.getElementById("See_also").parentNode;
-      } else if (document.getElementById("Notes") != null) {
-        var seeAlso = document.getElementById("Notes").parentNode;
-      } else {
-        var seeAlso = document.getElementById("References").parentNode;
-      }
       var e = document.getElementsByClassName("mw-parser-output");
-      const alsoIndex = Array.prototype.indexOf.call(
-        seeAlso.parentNode.children,
-        seeAlso
-      );
-      for (var i = alsoIndex; i < e[0].children.length; i++) {
-        e[0].removeChild(e[0].children[i]);
+
+      const alsoIndex = $("#See_also, #Notes, #References")
+        .parent()
+        .index();
+      if (alsoIndex > 0) {
+        $(e)
+          .children()
+          .slice(alsoIndex, $(e).children().length)
+          .remove();
       }
+
       var all_bad_elements = wikiHolder.querySelectorAll(
         "[rel='mw-deduplicated-inline-style'], [title='Name at birth'], [aria-labelledby='micro-periodic-table-title'], .barbox, .wikitable, .clade, .Expand_section, .nowrap, .IPA, .thumb, .mw-empty-elt, .mw-editsection, .nounderlines, .nomobile, .searchaux, #toc, .sidebar, .sistersitebox, .noexcerpt, #External_links, #Further_reading, .hatnote, .haudio, .portalbox, .mw-references-wrap, .infobox, .unsolved, .navbox, .metadata, .refbegin, .reflist, .mw-stack, #Notes, #References, .reference, .quotebox, .collapsible, .uncollapsed, .mw-collapsible, .mw-made-collapsible, .mbox-small, .mbox, #coordinates, .succession-box, .noprint, .mwe-math-element, .cs1-ws-icon"
       );
@@ -326,7 +323,7 @@ function PerformGuess(guess) {
   if (!guessedWords.includes(guess)) {
     push(guessedWordsRef, { playerID, word: guess });
   } else {
-    $(`tr[data-word='${guess}']`).addClass("table-secondary");
+    $(`tr[data-word='${guess}']`).addClass("row-highlight");
     $(`tr[data-word='${guess}']`)[0].scrollIntoView();
     currentlyHighlighted = guess;
     $(".innerTxt").each(function() {
@@ -342,7 +339,6 @@ function revealWord(word, highlight, playerID) {
     playerMappings[playerID] =
       colors[Object.keys(playerMappings).length % colors.length];
   }
-  console.log(playerMappings);
   let numHits = 0;
   if (baffled[word]) {
     for (const [elem, original] of baffled[word]) {
@@ -373,7 +369,7 @@ function LogGuess(guess, numHits, highlight, playerID) {
   newRow.setAttribute("data-word", guess);
   newRow.setAttribute("data-hits", numHits);
 
-  if (highlight) newRow.classList.add("table-secondary");
+  if (highlight) newRow.classList.add("row-highlight");
 
   newRow.innerHTML = `<td>${
     guessedWords.length
@@ -420,26 +416,16 @@ function HideZero() {
 function ShowZero() {
   hidingZero = false;
   SaveProgress();
-  $(".hiddenRow").each(function() {
-    $(this).removeClass("hiddenRow");
-  });
+  $(".hiddenRow").removeClass("hiddenRow");
 }
 
 function RemoveHighlights(clearCur) {
   if (clearCur) {
     currentlyHighlighted = null;
   }
-  $(".highlighted").each(function() {
-    $(this).removeClass("highlighted");
-  });
-  $(".superHighlighted").each(function() {
-    this.classList.remove("superHighlighted");
-  });
-  $("#guessLogBody")
-    .find(".table-secondary")
-    .each(function() {
-      this.classList.remove("table-secondary");
-    });
+  $(".highlighted").removeClass("highlighted");
+  $(".superHighlighted").removeClass("superHighlighted");
+  $(".row-highlight").removeClass("row-highlight");
 }
 
 function SaveProgress() {
@@ -555,7 +541,7 @@ window.onload = function() {
       if (currentlyHighlighted == null) {
         clickThruIndex = 0;
         currentlyHighlighted = word;
-        this.classList.add("table-secondary");
+        this.classList.add("row-highlight");
         $(".innerTxt").each(function() {
           if (this.innerHTML.normalizeGuess() == currentlyHighlighted) {
             $(this).addClass("highlighted");
@@ -566,7 +552,7 @@ window.onload = function() {
         } else {
           clickThruIndex = 0;
           RemoveHighlights(false);
-          this.classList.add("table-secondary");
+          this.classList.add("row-highlight");
           $(".innerTxt").each(function() {
             if (this.innerHTML.normalizeGuess() == word) {
               this.classList.add("highlighted");

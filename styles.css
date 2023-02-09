@@ -16,6 +16,8 @@ body {
 
 .baffled {
   background-color: #989898;
+  z-index: -1;
+  position: relative;
 }
 .hiddenRow {
   display: none;
@@ -42,11 +44,17 @@ td {
   overflow-wrap: break-word;
 }
 .highlighted {
-  background-color: #00585e !important;
+  text-decoration: wavy underline 3px;
+  text-underline-offset: 0.34em;
 }
 .superHighlighted {
-  background-color: #00becc !important;
-  color: #0f0f0f;
+  text-decoration: wavy underline overline 3px;
+}
+.row-highlight {
+  --bs-table-bg: #313135;
+}
+#guessLogBody {
+  border-top: 0;
 }
 #inputHolder {
   position: fixed;
