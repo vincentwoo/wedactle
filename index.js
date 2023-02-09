@@ -91,7 +91,7 @@ async function LoadGame() {
   console.log(`${Date.now() - startTime}: Get article`);
   let article;
   if (gameID == "") {
-    gameID = uuidv4();
+    gameID = uuidv4().slice(0, 6);
     window.location.hash = "#" + gameID;
     article = await getRandomArticle();
     set(ref(db, `/${gameID}/article`), article);
