@@ -21,20 +21,9 @@ async function scrapeArticles() {
       const $ = cheerio.load(await resp.text());
       const results = [];
       $("#bodyContent li a").each(function(idx, elem) {
-        if (
-          $(this).attr("href") &&
-          $(this)
-            .attr("href")
-            .startsWith("/wiki/") &&
-          !$(this)
-            .attr("href")
-            .includes(":")
-        )
-          results.push(
-            $(this)
-              .attr("href")
-              .split("/wiki/")[1]
-          );
+        const href = $(this).attr("href");
+        if (href && href.startsWith("/wiki/") && !href.includes(":"))
+          results.push(href.split("/wiki/")[1]);
       });
       return [category, results];
     })

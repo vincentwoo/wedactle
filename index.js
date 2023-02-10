@@ -93,11 +93,14 @@ async function LoadGame() {
   if (gameID == "") {
     gameID = uuidv4().slice(0, 6);
     window.location.hash = "#" + gameID;
-    article = await getRandomArticle();
+    article = getRandomArticle();
     set(ref(db, `/${gameID}/article`), article);
   } else {
     article = (await get(ref(db, `/${gameID}/article`))).val();
-    if (!article) article = await getRandomArticle();
+    if (!article) {
+      article = getRandomArticle();
+      set(ref(db, `/${gameID}/article`), article);
+    }
   }
 
   guessedWordsRef = ref(db, `/${gameID}/guessedWords`);
@@ -128,7 +131,7 @@ async function LoadGame() {
   );
 }
 
-async function getRandomArticle() {
+function getRandomArticle() {
   const articles = Object.values(window.articles).flat();
   return articles[Math.floor(Math.random() * articles.length)];
 }
