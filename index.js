@@ -129,17 +129,8 @@ async function LoadGame() {
 }
 
 async function getRandomArticle() {
-  try {
-    const resp = await fetch(
-      "https://randomincategory.toolforge.org/?category=All%20Wikipedia%20level-4%20vital%20articles&server=en.wikipedia.org&returntype=subject&debug=true"
-    );
-    const text = await resp.text();
-    return text.match(
-      /Location: https:\/\/en.wikipedia.org\/wiki\/(.*)<br>/
-    )[1];
-  } catch {
-    return getRandomArticle();
-  }
+  const articles = Object.values(window.articles).flat();
+  return articles[Math.floor(Math.random() * articles.length)];
 }
 
 async function fetchData(article) {
