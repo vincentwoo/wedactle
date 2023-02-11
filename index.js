@@ -172,42 +172,28 @@ async function fetchData(article) {
           .remove();
       }
 
-      var all_bad_elements = wikiHolder.querySelectorAll(
-        "[rel='mw-deduplicated-inline-style'], [title='Name at birth'], [aria-labelledby='micro-periodic-table-title'], .barbox, .wikitable, .clade, .Expand_section, .nowrap, .IPA, .thumb, .mw-empty-elt, .mw-editsection, .nounderlines, .nomobile, .searchaux, #toc, .sidebar, .sistersitebox, .noexcerpt, #External_links, #Further_reading, .hatnote, .haudio, .portalbox, .mw-references-wrap, .infobox, .unsolved, .navbox, .metadata, .refbegin, .reflist, .mw-stack, #Notes, #References, .reference, .quotebox, .collapsible, .uncollapsed, .mw-collapsible, .mw-made-collapsible, .mbox-small, .mbox, #coordinates, .succession-box, .noprint, .mwe-math-element, .cs1-ws-icon"
-      );
-
-      for (var i = 0; i < all_bad_elements.length; i++) {
-        all_bad_elements[i].remove();
+      for (const elem of wikiHolder.querySelectorAll(
+        "sup, excerpt, [rel='mw-deduplicated-inline-style'], [title='Name at birth'], [aria-labelledby='micro-periodic-table-title'], .barbox, .wikitable, .clade, .Expand_section, .nowrap, .IPA, .thumb, .mw-empty-elt, .mw-editsection, .nounderlines, .nomobile, .searchaux, #toc, .sidebar, .sistersitebox, .noexcerpt, #External_links, #Further_reading, .hatnote, .haudio, .portalbox, .mw-references-wrap, .infobox, .unsolved, .navbox, .metadata, .refbegin, .reflist, .mw-stack, #Notes, #References, .reference, .quotebox, .collapsible, .uncollapsed, .mw-collapsible, .mw-made-collapsible, .mbox-small, .mbox, #coordinates, .succession-box, .noprint, .mwe-math-element, .cs1-ws-icon"
+      )) {
+        elem.remove();
       }
 
-      var b = document.getElementsByTagName("b");
-      while (b.length) {
-        var parent = b[0].parentNode;
-        while (b[0].firstChild) {
-          parent.insertBefore(b[0].firstChild, b[0]);
-        }
-        parent.removeChild(b[0]);
-      }
-      var a = wikiHolder.getElementsByTagName("a");
-      while (a.length) {
-        var parent = a[0].parentNode;
-        while (a[0].firstChild) {
-          parent.insertBefore(a[0].firstChild, a[0]);
-        }
-        parent.removeChild(a[0]);
-      }
+      $(wikiHolder)
+        .find("a, b")
+        .each(function() {
+          const elem = this;
+          const parent = elem.parentNode;
+          while (elem.firstChild) {
+            parent.insertBefore(elem.firstChild, elem);
+          }
+          parent.removeChild(elem);
+        });
+
       var bq = document.getElementsByTagName("blockquote");
       for (var i = 0; i < bq.length; i++) {
         bq[i].innerHTML = bq[i].innerHTML.replace(/<[^>]*>?/gm, "");
       }
-      var s = document.getElementsByTagName("sup");
-      while (s.length) {
-        s[0].remove();
-      }
-      var ex = document.getElementsByClassName("excerpt");
-      while (ex.length) {
-        ex[0].remove();
-      }
+
       $(e[0])
         .find("[title]")
         .each(function() {
