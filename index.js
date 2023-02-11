@@ -37,10 +37,6 @@ var clickThruIndex = 0;
 var playerID;
 var gameID = window.location.hash.slice(1).trim();
 var pluralizing;
-var infoModal = new bootstrap.Modal(document.getElementById("infoModal"));
-var settingsModal = new bootstrap.Modal(
-  document.getElementById("settingsModal")
-);
 var guessedWordsRef;
 
 const colors = [
@@ -483,47 +479,10 @@ window.onload = function() {
     });
   });
 
-  $("#settingsBtn").click(function() {
-    settingsModal.show();
-    document.querySelector("body").style.overflow = "hidden";
-    return false;
-  });
-
-  $("#infoBtn").click(function() {
-    infoModal.show();
-    document.querySelector("body").style.overflow = "hidden";
-    return false;
-  });
-
-  $(".closeInfo").each(function() {
-    $(this).click(function() {
-      infoModal.hide();
-      document.querySelector("body").style.overflow = "auto";
-    });
-  });
-
-  $(".closeSettings").each(function() {
-    $(this).click(function() {
-      settingsModal.hide();
-      document.querySelector("body").style.overflow = "auto";
-    });
-  });
-
   $("#backToTop").click(function() {
     document.body.scrollTop = 0;
     document.documentElement.scrollTop = 0;
   });
-
-  window.onclick = function(event) {
-    if (event.target == document.getElementById("infoModal")) {
-      infoModal.hide();
-      document.querySelector("body").style.overflow = "auto";
-    }
-    if (event.target == document.getElementById("settingsModal")) {
-      settingsModal.hide();
-      document.querySelector("body").style.overflow = "auto";
-    }
-  };
 
   $("#tableHolder").on("click", "tr", function(e) {
     e.preventDefault();

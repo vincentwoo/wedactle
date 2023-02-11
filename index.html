@@ -9,10 +9,9 @@
 <body>
     <nav id="topNav">
         <span class="navbar-brand">Wedactle</span>
-
-            <a href="#" class="nav-link" id="infoBtn">Info</a>
-            <a href="#" class="nav-link" id="settingsBtn">Settings</a>
-
+            <a href="#" class="nav-link" id="newGameBtn" data-toggle="modal" data-target="#newGameModal">New Game</a>
+            <a href="#" class="nav-link" id="infoBtn" data-toggle="modal" data-target="#infoModal">Info</a>
+            <a href="#" class="nav-link" id="settingsBtn" data-toggle="modal" data-target="#settingsModal">Settings</a>
     </nav>
     <nav id="tableNav" class="navbar navbar-expand-lg navbar-dark fixed-right">
         <table class="table table-hover mt-5" id="tableHolder">
@@ -40,31 +39,46 @@
     <div class="container container-lg" id="winText"></div>
     <div class="container container-lg" id="wikiHolder"></div>
 
+    <div class="modal fade" id="newGameModal" tabindex="-1" aria-labelledby="newGameModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+        <div class="modal-content text-dark">
+            <div class="modal-header">
+            <h5 class="modal-title" id="newGameModalLabel">Start a New Game</h5>
+            <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                start new game text blah blah
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+        </div>
+    </div>
 
     <div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
         <div class="modal-dialog">
         <div class="modal-content text-dark">
             <div class="modal-header">
             <h5 class="modal-title" id="infoModalLabel">Welcome to Wedactle!</h5>
-            <button type="button" class="btn-close closeInfo" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 blah
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary closeInfo" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>
         </div>
     </div>
-
 
     <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
         <div class="modal-dialog">
         <div class="modal-content text-dark">
             <div class="modal-header">
             <h5 class="modal-title" id="settingsModalLabel">Settings</h5>
-            <button type="button" class="btn-close closeSettings" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div>
@@ -81,7 +95,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-            <button type="button" class="btn btn-secondary closeSettings" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>
         </div>
