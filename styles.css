@@ -60,7 +60,7 @@ td {
 #inputHolder {
   position: fixed;
   bottom: 0;
-  z-index: 2000;
+  z-index: 1050;
   padding: 1rem 0.5rem 1rem 0;
   background: #110f0f;
   right: 0;
@@ -97,7 +97,7 @@ td {
   width: 30vw;
   position: fixed;
   right: 0;
-  z-index: 2000;
+  z-index: 1050;
   line-height: 2.5rem;
   height: 3rem;
   background: #110f0f;
