@@ -14,7 +14,7 @@
             <a href="#" class="nav-link" id="settingsBtn">Settings</a>
 
     </nav>
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-right overflow-auto">
+    <nav id="tableNav" class="navbar navbar-expand-lg navbar-dark fixed-right">
         <table class="table table-hover mt-5" id="tableHolder">
             <thead>
                 <tr>
@@ -25,18 +25,18 @@
             </thead>
             <tbody id="guessLogBody"></tbody>
         </table>
-        <div id="inputHolder">
-            <div class="input-group m-3" id="inGrp">
-                <div class="input-group-prepend">
-                    <button class="btn btn-outline-secondary" type="button" id="backToTop">&#9650; Top</button>
-                </div>
-                <input type="text" class="form-control" aria-label="Text input" autofocus autocomplete="off" placeholder="Type your guess here" id="userGuess">
-                <div class="input-group-append">
-                    <button class="btn btn-outline-secondary" type="button" id="submitGuess">Guess!</button>
-                </div>
+    </nav>
+    <div id="inputHolder">
+        <div class="input-group" id="inGrp">
+            <div class="input-group-prepend">
+                <button class="btn btn-outline-secondary" type="button" id="backToTop">&#9650; Top</button>
+            </div>
+            <input type="text" class="form-control" aria-label="Text input" autofocus autocomplete="off" placeholder="Type your guess here" id="userGuess">
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="button" id="submitGuess">Guess!</button>
             </div>
         </div>
-    </nav>
+    </div>
     <div class="container container-lg" id="winText"></div>
     <div class="container container-lg" id="wikiHolder"></div>
 

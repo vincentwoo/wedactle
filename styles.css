@@ -60,7 +60,11 @@ td {
 #inputHolder {
   position: fixed;
   bottom: 0;
-  z-index: 4;
+  z-index: 2000;
+  padding: 1rem 0.5rem 1rem 0;
+  background: #110f0f;
+  right: 0;
+  width: 30vw;
 }
 #userGuess {
   min-width: 10vw;
@@ -96,6 +100,7 @@ td {
   z-index: 2000;
   line-height: 2.5rem;
   height: 3rem;
+  background: #110f0f;
 }
 #topNav span {
   font-size: 1.5rem;
@@ -109,7 +114,12 @@ td {
 #topNav a:hover {
   color: #fff;
 }
-
+#tableNav {
+  overflow: auto;
+}
+#tableNav::-webkit-scrollbar {
+  display: none;
+}
 @media (min-width: 992px) {
   .navbar.fixed-right {
     top: 0;
