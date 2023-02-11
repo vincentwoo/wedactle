@@ -40,17 +40,18 @@
     <div class="container container-lg" id="wikiHolder"></div>
 
     <div class="modal fade" id="newGameModal" tabindex="-1" aria-labelledby="newGameModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
         <div class="modal-content text-dark">
             <div class="modal-header">
             <h5 class="modal-title" id="newGameModalLabel">Start a New Game</h5>
             <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                start new game text blah blah
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <p>Welcome to Wedactle. Choose which categories you'd like a random article from:</p>
+                <form id="startGame">
+                    <div id="categories" class="form-group"></div>
+                    <button type="submit" class="btn btn-primary">Start Game</button>
+                </form>
             </div>
         </div>
         </div>

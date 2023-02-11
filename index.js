@@ -4,16 +4,17 @@ const startTime = Date.now();
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
 import {
-  getDatabase,
   get,
-  set,
-  ref,
-  push,
+  getDatabase,
   onChildAdded,
+  onValue,
+  orderByKey,
+  push,
   query,
+  ref,
+  set,
   startAfter,
   startAt,
-  orderByKey,
 } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
 
 const db = getDatabase(
@@ -67,8 +68,8 @@ function uuidv4() {
   );
 }
 
-async function LoadGame() {
-  console.log(`${Date.now() - startTime}: LoadGame`);
+async function Initialize() {
+  console.log(`${Date.now() - startTime}: Initialize`);
   if (localStorage.getItem("redactleSavet") === null) {
     localStorage.clear();
     playerID = uuidv4();
@@ -89,16 +90,28 @@ async function LoadGame() {
   if (gameID == "") {
     gameID = uuidv4().slice(0, 6);
     window.location.hash = "#" + gameID;
-    article = getRandomArticle();
-    set(ref(db, `/${gameID}/article`), article);
-  } else {
-    article = (await get(ref(db, `/${gameID}/article`))).val();
-    if (!article) {
-      article = getRandomArticle();
-      set(ref(db, `/${gameID}/article`), article);
-    }
   }
 
+  onValue(ref(db, `/${gameID}/article`), (snap) => {
+    if (!snap.val()) {
+      $("#newGameModal").modal("show");
+    } else {
+      LoadGame(snap.val());
+    }
+  });
+}
+
+async function NewGame(categories = Object.keys(window.articles)) {
+  const article = getRandomArticle(categories);
+  set(ref(db, `/${gameID}/article`), article);
+  set(ref(db, `/${gameID}/guessedWords`), null);
+  guessedWords = [];
+  guessLogBody.replaceChildren();
+  LoadGame(article);
+}
+
+async function LoadGame(article) {
+  $("#newGameModal").modal("hide");
   guessedWordsRef = ref(db, `/${gameID}/guessedWords`);
 
   console.log(`${Date.now() - startTime}: Begin dual await`);
@@ -127,8 +140,11 @@ async function LoadGame() {
   );
 }
 
-function getRandomArticle() {
-  const articles = Object.values(window.articles).flat();
+function getRandomArticle(categories) {
+  const articles = categories.reduce(
+    (result, category) => result.concat(window.articles[category]),
+    []
+  );
   return articles[Math.floor(Math.random() * articles.length)];
 }
 
@@ -259,6 +275,7 @@ async function fetchData(article) {
         /<!--(?!>)[\S\s]*?-->/g,
         ""
       );
+      baffled = {};
       $(".mw-parser-output span")
         .not(".punctuation")
         .each(function() {
@@ -289,7 +306,7 @@ async function fetchData(article) {
       alert("Something went wrong while loading the page. Try refreshing.");
     });
 }
-LoadGame();
+Initialize();
 
 function PerformGuess(guess) {
   clickThruIndex = 0;
@@ -412,7 +429,45 @@ function SaveProgress() {
   localStorage.setItem("redactleSavet", JSON.stringify(save));
 }
 
+function eachPair(arr) {
+  let result = [];
+  for (let i = 0; i < arr.length - 1; i += 2) {
+    result.push([arr[i], arr[i + 1]]);
+  }
+  if (arr.length % 2 !== 0) {
+    result.push([arr[arr.length - 1]]);
+  }
+  return result;
+}
+
 window.onload = function() {
+  function categoryHTML([category, pages]) {
+    return `<div class="col">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" checked id="${category}" name="${category}">
+        <label class="form-check-label" for="${category}">
+          ${category} (${pages.length})
+        </label>
+      </div>
+    </div>`;
+  }
+  for (const pair of eachPair(Object.entries(window.articles))) {
+    const row = `<div class="row">
+      ${categoryHTML(pair[0])}
+      ${pair[1] ? categoryHTML(pair[1]) : ""}
+     </div>`;
+    $("#categories").append(row);
+  }
+
+  $("#startGame").submit(function() {
+    NewGame(
+      $(this)
+        .serializeArray()
+        .map(({ name, value }) => name)
+    );
+    return false;
+  });
+
   var input = document.getElementById("userGuess");
 
   input.addEventListener("keyup", function(event) {
