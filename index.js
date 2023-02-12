@@ -101,8 +101,7 @@ async function Initialize() {
   });
 }
 
-async function NewGame(categories = Object.keys(window.articles)) {
-  const article = getRandomArticle(categories);
+async function NewGame(article) {
   set(ref(db, `/${gameID}/article`), article);
   set(ref(db, `/${gameID}/guessedWords`), null);
   guessedWords = [];
@@ -460,11 +459,23 @@ window.onload = function() {
   }
 
   $("#startGame").submit(function() {
-    NewGame(
+    $("#newGameModal").modal("hide");
+    const article = getRandomArticle(
       $(this)
         .serializeArray()
         .map(({ name, value }) => name)
     );
+    NewGame(article);
+    return false;
+  });
+
+  $("#startRedactleGame").click(async function() {
+    $("#newGameModal").modal("hide");
+    const resp = await fetch(
+      "https://us-central1-wedactle.cloudfunctions.net/dailyRedactle"
+    );
+    const article = await resp.text();
+    NewGame(article);
     return false;
   });
 
