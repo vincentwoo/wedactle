@@ -10,5 +10,19 @@
         "firebase-debug.*.log"
       ]
     }
-  ]
+  ],
+  "hosting": {
+    "public": ".",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/dailyRedactle",
+        "function": "dailyRedactle"
+      },
+      {
+        "source": "/level4Articles",
+        "function": "level4Articles"
+      }
+    ]
+  }
 }

@@ -3,6 +3,7 @@ const cheerio = require("cheerio");
 
 exports.dailyRedactle = functions.https.onRequest(async (req, res) => {
   res.header("Access-Control-Allow-Origin", "*");
+  res.set("Cache-Control", "public, max-age=3600");
   const resp = await fetch("https://redactle.com/ses.php");
   const json = await resp.json();
   res.send(atob(json.article));
@@ -10,6 +11,7 @@ exports.dailyRedactle = functions.https.onRequest(async (req, res) => {
 
 exports.level4Articles = functions.https.onRequest(async (req, res) => {
   res.header("Access-Control-Allow-Origin", "*");
+  res.set("Cache-Control", "public, max-age=86400");
   const url = "https://en.wikipedia.org/wiki/Wikipedia:Vital_articles/Level/4/";
   const categories = [
     "People",
