@@ -142,6 +142,7 @@ async function fetchData(article) {
         .replace(/\<\/small\>/g, "")
         .replace(/–/g, "-")
         .replace(/<audio.*<\/audio>/g, "");
+        .replace(/<video.*<\/video>/g, "");
       wikiHolder.style.display = "none";
       wikiHolder.innerHTML = cleanText;
       var redirecting = document.getElementsByClassName("redirectMsg");
