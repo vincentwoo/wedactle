@@ -141,7 +141,7 @@ async function fetchData(article) {
         .replace(/\<small\>/g, "")
         .replace(/\<\/small\>/g, "")
         .replace(/–/g, "-")
-        .replace(/<audio.*<\/audio>/g, "");
+        .replace(/<audio.*<\/audio>/g, "")
         .replace(/<video.*<\/video>/g, "");
       wikiHolder.style.display = "none";
       wikiHolder.innerHTML = cleanText;
