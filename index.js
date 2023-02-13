@@ -7,6 +7,13 @@ const db = firebase
     databaseURL: "https://wedactle-default-rtdb.firebaseio.com",
   })
   .database();
+// prettier-ignore
+const colors = ["#ffadad","#ffd6a5","#caffbf","#9bf6ff","#bdb2ff","#fffffc","#a0c4ff","#ffc6ff","#fdffb6"];
+const playerMappings = {};
+let guessedWordsRef;
+let articlesPromise;
+let articles;
+
 var wikiHolder = document.getElementById("wikiHolder");
 var guessLogBody = document.getElementById("guessLogBody");
 var baffled = {};
@@ -16,25 +23,10 @@ var hidingZero = false;
 var hidingLog = false;
 var currentlyHighlighted;
 var save = {};
-var pageRevealed = false;
 var clickThruIndex = 0;
 var playerID;
 var gameID = window.location.hash.slice(1).trim();
 var pluralizing;
-var guessedWordsRef;
-
-const colors = [
-  "#ffadad",
-  "#ffd6a5",
-  "#caffbf",
-  "#9bf6ff",
-  "#bdb2ff",
-  "#fffffc",
-  "#a0c4ff",
-  "#ffc6ff",
-  "#fdffb6",
-];
-const playerMappings = {};
 
 String.prototype.normalizeGuess = function() {
   return this.normalize("NFD")
@@ -67,6 +59,9 @@ async function Initialize() {
   playerID = save.id.playerID;
   hidingZero = save.prefs.hidingZero;
   pluralizing = save.prefs.pluralizing;
+  articlesPromise = fetch("https://wedactle.web.app/level4Articles").then(
+    async (resp) => (articles = await resp.json())
+  );
 
   console.log(`${Date.now() - startTime}: Get article`);
   let article;
@@ -92,6 +87,7 @@ async function NewGame(article) {
 
 async function LoadGame(article) {
   $("#newGameModal").modal("hide");
+  document.getElementById("userGuess").disabled = false;
   guessedWordsRef = db.ref(`/${gameID}/guessedWords`);
   guessedWordsRef.off();
 
@@ -120,11 +116,11 @@ async function LoadGame(article) {
 }
 
 function getRandomArticle(categories) {
-  const articles = categories.reduce(
-    (result, category) => result.concat(window.articles[category]),
+  const pages = categories.reduce(
+    (result, category) => result.concat(articles[category]),
     []
   );
-  return articles[Math.floor(Math.random() * articles.length)];
+  return pages[Math.floor(Math.random() * pages.length)];
 }
 
 async function fetchData(article) {
@@ -357,20 +353,15 @@ function LogGuess(guess, numHits, highlight, playerID) {
 }
 
 function WinRound() {
+  console.log("win");
   document.getElementById("userGuess").disabled = true;
-  if (!pageRevealed) {
-    RevealPage();
-  }
-  SaveProgress();
-}
-
-function RevealPage() {
   RemoveHighlights(false);
   for (const [elem, original] of Object.values(baffled).flat()) {
     elem.classList.remove("baffled");
     elem.innerText = original;
   }
-  pageRevealed = true;
+  baffled = {};
+  SaveProgress();
 }
 
 function HideZero() {
@@ -420,8 +411,9 @@ function eachPair(arr) {
 }
 
 window.onload = function() {
-  function categoryHTML([category, pages]) {
-    return `<div class="col">
+  articlesPromise.then(() => {
+    function categoryHTML([category, pages]) {
+      return `<div class="col">
       <div class="form-check">
         <input class="form-check-input" type="checkbox" checked id="${category}" name="${category}">
         <label class="form-check-label" for="${category}">
@@ -429,15 +421,15 @@ window.onload = function() {
         </label>
       </div>
     </div>`;
-  }
-  for (const pair of eachPair(Object.entries(window.articles))) {
-    const row = `<div class="row">
+    }
+    for (const pair of eachPair(Object.entries(articles))) {
+      const row = `<div class="row">
       ${categoryHTML(pair[0])}
       ${pair[1] ? categoryHTML(pair[1]) : ""}
      </div>`;
-    $("#categories").append(row);
-  }
-
+      $("#categories").append(row);
+    }
+  });
   $("#startGame").submit(function() {
     $("#newGameModal").modal("hide");
     const article = getRandomArticle(
@@ -451,9 +443,7 @@ window.onload = function() {
 
   $("#startRedactleGame").click(async function() {
     $("#newGameModal").modal("hide");
-    const resp = await fetch(
-      "https://us-central1-wedactle.cloudfunctions.net/dailyRedactle"
-    );
+    const resp = await fetch("https://wedactle.web.app/dailyRedactle");
     const article = await resp.text();
     NewGame(article);
     return false;
