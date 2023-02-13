@@ -7,6 +7,7 @@ import {
   get,
   getDatabase,
   onChildAdded,
+  off,
   onValue,
   orderByKey,
   push,
@@ -102,16 +103,15 @@ async function Initialize() {
 }
 
 async function NewGame(article) {
-  set(ref(db, `/${gameID}/article`), article);
-  set(ref(db, `/${gameID}/guessedWords`), null);
+  set(ref(db, `/${gameID}`), { article, guessedWords: null });
   guessedWords = [];
   guessLogBody.replaceChildren();
-  LoadGame(article);
 }
 
 async function LoadGame(article) {
   $("#newGameModal").modal("hide");
   guessedWordsRef = ref(db, `/${gameID}/guessedWords`);
+  off(guessedWordsRef);
 
   console.log(`${Date.now() - startTime}: Begin dual await`);
   let [snapshot, _] = await Promise.all([
