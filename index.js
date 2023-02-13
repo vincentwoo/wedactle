@@ -1,30 +1,12 @@
 // prettier-ignore
 const commonWords = ["a","aboard","about","above","across","after","against","along","amid","among","an","and","around","as","at","because","before","behind","below","beneath","beside","between","beyond","but","by","concerning","considering","despite","down","during","except","following","for","from","if","in","inside","into","is","it","like","minus","near","next","of","off","on","onto","opposite","or","out","outside","over","past","per","plus","regarding","round","save","since","than","the","through","till","to","toward","under","underneath","unlike","until","up","upon","versus","via","was","with","within","without"];
 const startTime = Date.now();
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-import {
-  get,
-  getDatabase,
-  onChildAdded,
-  off,
-  onValue,
-  orderByKey,
-  push,
-  query,
-  ref,
-  set,
-  startAfter,
-  startAt,
-} from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
-
-const db = getDatabase(
-  initializeApp({
+const db = firebase
+  .initializeApp({
     apiKey: "AIzaSyCKuwvb-kN3FgzmGdp-n8KsDcfwsqXyEuM",
     databaseURL: "https://wedactle-default-rtdb.firebaseio.com",
   })
-);
-
+  .database();
 var wikiHolder = document.getElementById("wikiHolder");
 var guessLogBody = document.getElementById("guessLogBody");
 var baffled = {};
@@ -93,7 +75,7 @@ async function Initialize() {
     window.location.hash = "#" + gameID;
   }
 
-  onValue(ref(db, `/${gameID}/article`), (snap) => {
+  db.ref(`/${gameID}/article`).on("value", (snap) => {
     if (!snap.val()) {
       $("#newGameModal").modal("show");
     } else {
@@ -103,19 +85,19 @@ async function Initialize() {
 }
 
 async function NewGame(article) {
-  set(ref(db, `/${gameID}`), { article, guessedWords: null });
+  db.ref(gameID).set({ article, guessedWords: null });
   guessedWords = [];
   guessLogBody.replaceChildren();
 }
 
 async function LoadGame(article) {
   $("#newGameModal").modal("hide");
-  guessedWordsRef = ref(db, `/${gameID}/guessedWords`);
-  off(guessedWordsRef);
+  guessedWordsRef = db.ref(`/${gameID}/guessedWords`);
+  guessedWordsRef.off();
 
   console.log(`${Date.now() - startTime}: Begin dual await`);
   let [snapshot, _] = await Promise.all([
-    get(guessedWordsRef),
+    guessedWordsRef.get(),
     fetchData(article),
   ]);
   console.log(`${Date.now() - startTime}: Dual await complete`);
@@ -128,15 +110,13 @@ async function LoadGame(article) {
     revealWord(word, false, playerID);
   });
 
-  onChildAdded(
-    lastKey
-      ? query(guessedWordsRef, orderByKey(), startAfter(lastKey))
-      : guessedWordsRef,
-    (data) => {
-      const { word, playerID } = data.val();
-      revealWord(word, true, playerID);
-    }
-  );
+  (lastKey
+    ? guessedWordsRef.orderByKey().startAfter(lastKey)
+    : guessedWordsRef
+  ).on("child_added", (data) => {
+    const { word, playerID } = data.val();
+    revealWord(word, true, playerID);
+  });
 }
 
 function getRandomArticle(categories) {
@@ -313,7 +293,7 @@ function PerformGuess(guess) {
   guess = guess.normalizeGuess();
   if (commonWords.includes(guess)) return;
   if (!guessedWords.includes(guess)) {
-    push(guessedWordsRef, { playerID, word: guess });
+    guessedWordsRef.push({ playerID, word: guess });
   } else {
     $(`tr[data-word='${guess}']`).addClass("row-highlight");
     $(`tr[data-word='${guess}']`)[0].scrollIntoView();
