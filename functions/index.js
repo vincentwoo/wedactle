@@ -1,5 +1,7 @@
+const admin = require("firebase-admin");
 const functions = require("firebase-functions");
 const cheerio = require("cheerio");
+admin.initializeApp(functions.config().firebase);
 
 exports.dailyRedactle = functions.https.onRequest(async (req, res) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -45,4 +47,22 @@ exports.level4Articles = functions.https.onRequest(async (req, res) => {
     result[category] = articles;
   }
   res.send(JSON.stringify(result));
+});
+
+// exports.cleanupGames = functions.pubsub
+//   .schedule("every 1 minutes")
+//   .onRun((context) => {
+//     functions.database.ref
+//     return null;
+//   });
+
+exports.test = functions.https.onRequest((req, res) => {
+  const results = [];
+  admin
+    .database()
+    .ref("/")
+    .on("child_added", function(snap) {
+      results.push(snap.val().article);
+    });
+  res.send(JSON.stringify(results));
 });

@@ -47,7 +47,7 @@ async function Initialize() {
   console.log(`${Date.now() - startTime}: Initialize`);
   if (localStorage.getItem("redactleSavet") === null) {
     localStorage.clear();
-    playerID = uuidv4();
+    playerID = uuidv4().slice(0, 6);
     save = {
       prefs: { hidingZero, hidingLog, pluralizing },
       id: { playerID },
@@ -80,7 +80,11 @@ async function Initialize() {
 }
 
 async function NewGame(article) {
-  db.ref(gameID).set({ article, guessedWords: null });
+  db.ref(gameID).set({
+    article,
+    guessedWords: null,
+    timestamp: firebase.database.ServerValue.TIMESTAMP,
+  });
 }
 
 async function LoadGame(article) {
@@ -286,7 +290,11 @@ function PerformGuess(guess) {
   guess = guess.normalizeGuess();
   if (commonWords.includes(guess)) return;
   if (!guessedWords.includes(guess)) {
-    guessedWordsRef.push({ playerID, word: guess });
+    guessedWordsRef.push({
+      playerID,
+      word: guess,
+      timestamp: firebase.database.ServerValue.TIMESTAMP,
+    });
   } else {
     $(`tr[data-word='${guess}']`).addClass("row-highlight");
     $(`tr[data-word='${guess}']`)[0].scrollIntoView();
