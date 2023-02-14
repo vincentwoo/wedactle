@@ -45,16 +45,16 @@ function uuidv4() {
 
 async function Initialize() {
   console.log(`${Date.now() - startTime}: Initialize`);
-  if (localStorage.getItem("redactleSavet") === null) {
+  if (localStorage.getItem("wedactleSave1") === null) {
     localStorage.clear();
     playerID = uuidv4().slice(0, 6);
     save = {
       prefs: { hidingZero, hidingLog, pluralizing },
       id: { playerID },
     };
-    localStorage.setItem("redactleSavet", JSON.stringify(save));
+    localStorage.setItem("wedactleSave1", JSON.stringify(save));
   } else {
-    save = JSON.parse(localStorage.getItem("redactleSavet"));
+    save = JSON.parse(localStorage.getItem("wedactleSave1"));
   }
   playerID = save.id.playerID;
   hidingZero = save.prefs.hidingZero;
@@ -405,7 +405,7 @@ function SaveProgress() {
   save.prefs.hidingZero = hidingZero;
   save.prefs.hidingLog = hidingLog;
   save.prefs.pluralizing = pluralizing;
-  localStorage.setItem("redactleSavet", JSON.stringify(save));
+  localStorage.setItem("wedactleSave1", JSON.stringify(save));
 }
 
 function eachPair(arr) {
