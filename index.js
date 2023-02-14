@@ -125,7 +125,7 @@ function getRandomArticle(categories) {
 
 async function fetchData(article) {
   return await fetch(
-    `https://en.wikipedia.org/w/api.php?action=parse&format=json&page=${article}&prop=text&formatversion=2&origin=*`
+    `https://en.wikipedia.org/w/api.php?action=parse&format=json&prop=text&formatversion=2&origin=*&page=${article}`
   )
     .then((resp) => {
       if (!resp.ok) {
@@ -404,6 +404,16 @@ function eachPair(arr) {
   return result;
 }
 
+function debounce(func, timeout = 300) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      func.apply(this, args);
+    }, timeout);
+  };
+}
+
 window.onload = function() {
   articlesPromise.then(() => {
     function categoryHTML([category, pages]) {
@@ -424,6 +434,7 @@ window.onload = function() {
       $("#categories").append(row);
     }
   });
+
   $("#startGame").submit(function() {
     $("#newGameModal").modal("hide");
     const article = getRandomArticle(
@@ -440,6 +451,30 @@ window.onload = function() {
     const resp = await fetch("https://wedactle.web.app/dailyRedactle");
     const article = await resp.text();
     NewGame(article);
+    return false;
+  });
+
+  $("#customGame").keyup(
+    debounce(async function() {
+      let article = $("#customGame").val();
+      if (article.startsWith("https://en.wikipedia.org/wiki/")) {
+        article = article.split("https://en.wikipedia.org/wiki/")[1];
+      }
+      const resp = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&titles=${article}`
+      );
+      const json = await resp.json();
+      $("#startCustomGame button").prop(
+        "disabled",
+        !json.query || Object.keys(json.query.pages)[0] <= 0
+      );
+      return false;
+    })
+  );
+
+  $("#startCustomGame").submit(function() {
+    $("#newGameModal").modal("hide");
+    NewGame($("#customGame").val());
     return false;
   });
 
