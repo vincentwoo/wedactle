@@ -103,7 +103,7 @@ async function LoadGame(article) {
   snapshot.forEach((entry) => {
     lastKey = entry.key;
     const { word, playerID } = entry.val();
-    revealWord(word, false, playerID);
+    revealWord(word, playerID);
   });
 
   (lastKey
@@ -111,7 +111,7 @@ async function LoadGame(article) {
     : guessedWordsRef
   ).on("child_added", (data) => {
     const { word, playerID } = data.val();
-    revealWord(word, true, playerID);
+    revealWord(word, playerID);
   });
 }
 
@@ -236,6 +236,7 @@ async function fetchData(article) {
           el.replaceWith(replaced);
         });
 
+      debugger;
       e[0].innerHTML = e[0].innerHTML
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">")
@@ -291,38 +292,38 @@ function PerformGuess(guess) {
     $(`tr[data-word='${guess}']`).addClass("row-highlight");
     $(`tr[data-word='${guess}']`)[0].scrollIntoView();
     currentlyHighlighted = guess;
-    for (const [elem, original] of baffled[word]) {
+    for (const [elem, original] of baffled[guess]) {
       elem.classList.add("highlighted");
     }
   }
 }
 
-function revealWord(word, highlight, playerID) {
-  if (!playerMappings[playerID]) {
-    playerMappings[playerID] =
+function revealWord(word, _playerID) {
+  if (!playerMappings[_playerID]) {
+    playerMappings[_playerID] =
       colors[Object.keys(playerMappings).length % colors.length];
   }
   let numHits = 0;
   if (baffled[word]) {
+    RemoveHighlights(false);
     for (const [elem, original] of baffled[word]) {
       elem.classList.remove("baffled");
-      elem.setAttribute("data-word", word);
       elem.innerText = original;
-      elem.style.color = playerMappings[playerID];
+      elem.style.color = playerMappings[_playerID];
       numHits += 1;
-      if (highlight) {
+      if (playerID == _playerID) {
         elem.classList.add("highlighted");
         currentlyHighlighted = word;
       }
     }
   }
   guessedWords.push(word);
-  LogGuess(word, numHits, highlight, playerID);
+  LogGuess(word, numHits, _playerID);
   ans = ans.filter((_word) => _word != word);
   if (ans.length == 0) WinRound();
 }
 
-function LogGuess(guess, numHits, highlight, playerID) {
+function LogGuess(guess, numHits, _playerID) {
   if (hidingZero) {
     HideZero();
   }
@@ -331,13 +332,15 @@ function LogGuess(guess, numHits, highlight, playerID) {
   newRow.setAttribute("data-word", guess);
   newRow.setAttribute("data-hits", numHits);
 
-  if (highlight) newRow.classList.add("row-highlight");
+  if (playerID == _playerID) {
+    newRow.classList.add("row-highlight");
+  }
 
   newRow.innerHTML = `<td>${
     guessedWords.length
   }</td><td>${guess}</td><td class="tableHits">${numHits}</td>`;
 
-  newRow.children[1].style.color = playerMappings[playerID];
+  newRow.children[1].style.color = playerMappings[_playerID];
 
   newRow.scrollIntoView({
     behavior: "auto",
@@ -355,6 +358,11 @@ function WinRound() {
     elem.innerText = original;
   }
   baffled = {};
+  setTimeout(function() {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  }, 10);
+
   SaveProgress();
 }
 
@@ -541,23 +549,14 @@ window.onload = function() {
     const hits = $(this).data("hits");
 
     if (hits > 0) {
-      const allInstances = wikiHolder.querySelectorAll(`[data-word="${word}"]`);
-      if (currentlyHighlighted == null) {
+      const allInstances = baffled[word].map(([elem, original]) => elem);
+      if (currentlyHighlighted == null || currentlyHighlighted != word) {
         clickThruIndex = 0;
+        RemoveHighlights(false);
         currentlyHighlighted = word;
         this.classList.add("row-highlight");
-        for (const [elem, original] of baffled[currentlyHighlighted]) {
+        for (const elem of allInstances) {
           elem.classList.add("highlighted");
-        }
-      } else {
-        if (word != currentlyHighlighted) {
-          clickThruIndex = 0;
-          RemoveHighlights(false);
-          this.classList.add("row-highlight");
-          for (const [elem, original] of baffled[word]) {
-            this.classList.add("highlighted");
-          }
-          currentlyHighlighted = word;
         }
       }
       $(".superHighlighted").each(function() {

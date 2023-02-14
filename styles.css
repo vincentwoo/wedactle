@@ -84,6 +84,8 @@ td {
 }
 #tableHolder {
   color: #fff;
+  --bs-table-hover-color: inherit;
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.075);
 }
 #tableHolder thead tr th,
 #tableHolder tr td,
@@ -120,6 +122,9 @@ td {
 }
 #tableNav::-webkit-scrollbar {
   display: none;
+}
+#wikiHolder h1 {
+  padding-top: 1rem;
 }
 @media (min-width: 992px) {
   .navbar.fixed-right {
