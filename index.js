@@ -454,6 +454,7 @@ window.onload = function() {
     return false;
   });
 
+  let lastVerifiedArticle;
   $("#customGame").keyup(
     debounce(async function() {
       let article = $("#customGame").val();
@@ -464,17 +465,16 @@ window.onload = function() {
         `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&titles=${article}`
       );
       const json = await resp.json();
-      $("#startCustomGame button").prop(
-        "disabled",
-        !json.query || Object.keys(json.query.pages)[0] <= 0
-      );
+      const valid = json.query && Object.keys(json.query.pages)[0] > 0;
+      $("#startCustomGame button").prop("disabled", !valid);
+      if (valid) lastVerifiedArticle = article;
       return false;
     })
   );
 
   $("#startCustomGame").submit(function() {
     $("#newGameModal").modal("hide");
-    NewGame($("#customGame").val());
+    NewGame(lastVerifiedArticle);
     return false;
   });
 
