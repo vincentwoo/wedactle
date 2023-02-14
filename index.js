@@ -241,26 +241,25 @@ async function fetchData(article) {
         .replace(/&gt;/g, ">")
         .replace(
           /(<span class="punctuation">.<\/span>)|(^|<\/?[^>]+>|\s+)|([^\s<]+)/g,
-          '$1$2<span class="innerTxt">$3</span>'
+          '$1$2<span class="baffled">$3</span>'
         )
-        .replace('<<span class="innerTxt">h1>', '<h1><span class="innerTxt">');
+        .replace('<<span class="baffled">h1>', '<h1><span class="baffled">');
       $(e[0])
         .find("*:empty")
         .remove();
 
       baffled = {};
-      $(".mw-parser-output span")
-        .not(".punctuation")
-        .each(function() {
-          const original = this.innerText;
-          const normText = original.normalizeGuess();
-          if (!commonWords.includes(normText)) {
-            this.classList.add("baffled");
-            this.innerText = "\u00A0".repeat(normText.length);
-            baffled[normText] = baffled[normText] || [];
-            baffled[normText].push([this, original]);
-          }
-        });
+      $(".mw-parser-output span.baffled").each(function() {
+        const original = this.innerText;
+        const normText = original.normalizeGuess();
+        if (commonWords.includes(normText)) {
+          this.classList.remove("baffled");
+        } else {
+          this.innerText = "\u00A0".repeat(normText.length);
+          baffled[normText] = baffled[normText] || [];
+          baffled[normText].push([this, original]);
+        }
+      });
 
       document.getElementById("autoPlural").checked = pluralizing;
 
