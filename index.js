@@ -488,6 +488,7 @@ window.onload = function() {
 
   $("#startCustomGame").submit(function() {
     $("#newGameModal").modal("hide");
+    $("#customGame").val("");
     NewGame(lastVerifiedArticle);
     return false;
   });
