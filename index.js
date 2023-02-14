@@ -81,8 +81,6 @@ async function Initialize() {
 
 async function NewGame(article) {
   db.ref(gameID).set({ article, guessedWords: null });
-  guessedWords = [];
-  guessLogBody.replaceChildren();
 }
 
 async function LoadGame(article) {
@@ -90,6 +88,8 @@ async function LoadGame(article) {
   document.getElementById("userGuess").disabled = false;
   guessedWordsRef = db.ref(`/${gameID}/guessedWords`);
   guessedWordsRef.off();
+  guessedWords = [];
+  guessLogBody.replaceChildren();
 
   console.log(`${Date.now() - startTime}: Begin dual await`);
   let [snapshot, _] = await Promise.all([
