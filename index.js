@@ -236,7 +236,6 @@ async function fetchData(article) {
           el.replaceWith(replaced);
         });
 
-      debugger;
       e[0].innerHTML = e[0].innerHTML
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">")
