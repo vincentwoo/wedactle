@@ -80,11 +80,6 @@ async function Initialize() {
 }
 
 async function NewGame(article) {
-  console.log({
-    article,
-    guessedWords: null,
-    timestamp: firebase.database.ServerValue.TIMESTAMP,
-  });
   db.ref(gameID).set({
     article,
     guessedWords: null,
