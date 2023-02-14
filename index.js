@@ -138,11 +138,12 @@ async function fetchData(article) {
     .then((receivedJson) => {
       var cleanText = receivedJson.parse.text
         .replace(/<img[^>]*>/g, "")
-        .replace(/\<small\>/g, "")
-        .replace(/\<\/small\>/g, "")
+        .replace(/\<\/?small\>/g, "")
         .replace(/–/g, "-")
-        .replace(/<audio.*<\/audio>/g, "")
-        .replace(/<video.*<\/video>/g, "");
+        .replace(/<audio.*?<\/audio>/g, "")
+        .replace(/<video.*?<\/video>/g, "")
+        .replace(/<!--(?!>)[\S\s]*?-->/g, "")
+        .replace(/(<style.*?<\/style>)/g, "");
       wikiHolder.style.display = "none";
       wikiHolder.innerHTML = cleanText;
       var redirecting = document.getElementsByClassName("redirectMsg");
@@ -238,7 +239,6 @@ async function fetchData(article) {
       e[0].innerHTML = e[0].innerHTML
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">")
-        .replace(/(<style.*<\/style>)/g, "")
         .replace(
           /(<span class="punctuation">.<\/span>)|(^|<\/?[^>]+>|\s+)|([^\s<]+)/g,
           '$1$2<span class="innerTxt">$3</span>'
@@ -247,21 +247,18 @@ async function fetchData(article) {
       $(e[0])
         .find("*:empty")
         .remove();
-      wikiHolder.innerHTML = wikiHolder.innerHTML.replace(
-        /<!--(?!>)[\S\s]*?-->/g,
-        ""
-      );
+
       baffled = {};
       $(".mw-parser-output span")
         .not(".punctuation")
         .each(function() {
-          const txt = this.innerHTML.normalizeGuess();
-          if (!commonWords.includes(txt)) {
-            this.classList.toggle("baffled");
-            const original = this.innerText;
-            this.innerHTML = "&nbsp;".repeat(txt.length);
-            baffled[txt] = baffled[txt] || [];
-            baffled[txt].push([this, original]);
+          const original = this.innerText;
+          const normText = original.normalizeGuess();
+          if (!commonWords.includes(normText)) {
+            this.classList.add("baffled");
+            this.innerText = "\u00A0".repeat(normText.length);
+            baffled[normText] = baffled[normText] || [];
+            baffled[normText].push([this, original]);
           }
         });
 
@@ -295,11 +292,9 @@ function PerformGuess(guess) {
     $(`tr[data-word='${guess}']`).addClass("row-highlight");
     $(`tr[data-word='${guess}']`)[0].scrollIntoView();
     currentlyHighlighted = guess;
-    $(".innerTxt").each(function() {
-      if (this.innerHTML.normalizeGuess() == guess) {
-        this.classList.add("highlighted");
-      }
-    });
+    for (const [elem, original] of baffled[word]) {
+      elem.classList.add("highlighted");
+    }
   }
 }
 
@@ -321,7 +316,6 @@ function revealWord(word, highlight, playerID) {
         currentlyHighlighted = word;
       }
     }
-    delete baffled[word];
   }
   guessedWords.push(word);
   LogGuess(word, numHits, highlight, playerID);
@@ -518,22 +512,17 @@ window.onload = function() {
         clickThruIndex = 0;
         currentlyHighlighted = word;
         this.classList.add("row-highlight");
-        $(".innerTxt").each(function() {
-          if (this.innerHTML.normalizeGuess() == currentlyHighlighted) {
-            $(this).addClass("highlighted");
-          }
-        });
+        for (const [elem, original] of baffled[currentlyHighlighted]) {
+          elem.classList.add("highlighted");
+        }
       } else {
-        if (word == currentlyHighlighted) {
-        } else {
+        if (word != currentlyHighlighted) {
           clickThruIndex = 0;
           RemoveHighlights(false);
           this.classList.add("row-highlight");
-          $(".innerTxt").each(function() {
-            if (this.innerHTML.normalizeGuess() == word) {
-              this.classList.add("highlighted");
-            }
-          });
+          for (const [elem, original] of baffled[word]) {
+            this.classList.add("highlighted");
+          }
           currentlyHighlighted = word;
         }
       }
