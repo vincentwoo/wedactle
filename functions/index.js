@@ -49,20 +49,24 @@ exports.level4Articles = functions.https.onRequest(async (req, res) => {
   res.send(JSON.stringify(result));
 });
 
-// exports.cleanupGames = functions.pubsub
-//   .schedule("every 1 minutes")
-//   .onRun((context) => {
-//     functions.database.ref
-//     return null;
-//   });
-
-exports.test = functions.https.onRequest((req, res) => {
-  const results = [];
-  admin
+exports.cleanupGames = functions.pubsub.schedule("every 12 hours").onRun(() => {
+  const cutoffTime = Date.now() - 3 * 86400 * 1000;
+  return admin
     .database()
-    .ref("/")
-    .on("child_added", function(snap) {
-      results.push(snap.val().article);
+    .ref()
+    .get()
+    .then((snap) => {
+      const deletes = [];
+      for (const [key, child] of Object.entries(snap.val() || {})) {
+        if (child.timestamp && child.timestamp < cutoffTime) {
+          deletes.push(
+            admin
+              .database()
+              .ref(key)
+              .set(null)
+          );
+        }
+      }
+      return Promise.all(deletes);
     });
-  res.send(JSON.stringify(results));
 });
