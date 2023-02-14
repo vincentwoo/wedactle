@@ -80,6 +80,11 @@ async function Initialize() {
 }
 
 async function NewGame(article) {
+  console.log({
+    article,
+    guessedWords: null,
+    timestamp: firebase.database.ServerValue.TIMESTAMP,
+  });
   db.ref(gameID).set({
     article,
     guessedWords: null,
@@ -357,7 +362,6 @@ function LogGuess(guess, numHits, _playerID) {
 }
 
 function WinRound() {
-  console.log("win");
   document.getElementById("userGuess").disabled = true;
   RemoveHighlights(false);
   for (const [elem, original] of Object.values(baffled).flat()) {
