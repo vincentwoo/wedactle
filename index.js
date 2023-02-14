@@ -291,7 +291,7 @@ function PerformGuess(guess) {
     $(`tr[data-word='${guess}']`).addClass("row-highlight");
     $(`tr[data-word='${guess}']`)[0].scrollIntoView();
     currentlyHighlighted = guess;
-    for (const [elem, original] of baffled[guess]) {
+    for (const [elem, original] of baffled[guess] || []) {
       elem.classList.add("highlighted");
     }
   }
