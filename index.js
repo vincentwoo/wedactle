@@ -10,6 +10,7 @@ const db = firebase
 // prettier-ignore
 const colors = ["#ffadad","#ffd6a5","#caffbf","#9bf6ff","#bdb2ff","#fffffc","#a0c4ff","#ffc6ff","#fdffb6"];
 const playerMappings = {};
+const storageKey = "wedactleSave2";
 let guessedWordsRef;
 let articlesPromise;
 let articles;
@@ -24,7 +25,7 @@ var hidingLog = false;
 var currentlyHighlighted;
 var save = {};
 var clickThruIndex = 0;
-var playerID;
+var myPlayerID;
 var gameID = window.location.hash.slice(1).trim();
 var pluralizing;
 
@@ -45,18 +46,18 @@ function uuidv4() {
 
 async function Initialize() {
   console.log(`${Date.now() - startTime}: Initialize`);
-  if (localStorage.getItem("wedactleSave1") === null) {
+  if (localStorage.getItem(storageKey) === null) {
     localStorage.clear();
-    playerID = uuidv4().slice(0, 6);
+    myPlayerID = uuidv4().slice(0, 6);
     save = {
       prefs: { hidingZero, hidingLog, pluralizing },
-      id: { playerID },
+      id: { myPlayerID },
     };
-    localStorage.setItem("wedactleSave1", JSON.stringify(save));
+    localStorage.setItem(storageKey, JSON.stringify(save));
   } else {
-    save = JSON.parse(localStorage.getItem("wedactleSave1"));
+    save = JSON.parse(localStorage.getItem(storageKey));
   }
-  playerID = save.id.playerID;
+  myPlayerID = save.id.myPlayerID;
   hidingZero = save.prefs.hidingZero;
   pluralizing = save.prefs.pluralizing;
   articlesPromise = fetch("https://wedactle.web.app/level4Articles").then(
@@ -89,34 +90,16 @@ async function NewGame(article) {
 
 async function LoadGame(article) {
   $("#newGameModal").modal("hide");
+  $("#winText").css("display", "none");
   document.getElementById("userGuess").disabled = false;
   guessedWordsRef = db.ref(`/${gameID}/guessedWords`);
   guessedWordsRef.off();
   guessedWords = [];
   guessLogBody.replaceChildren();
 
-  console.log(`${Date.now() - startTime}: Begin dual await`);
-  let [snapshot, _] = await Promise.all([
-    guessedWordsRef.get(),
-    fetchData(article),
-  ]);
-  console.log(`${Date.now() - startTime}: Dual await complete`);
+  await renderArticle(article);
 
-  let lastKey = null;
-
-  snapshot.forEach((entry) => {
-    lastKey = entry.key;
-    const { word, playerID } = entry.val();
-    revealWord(word, playerID);
-  });
-
-  (lastKey
-    ? guessedWordsRef.orderByKey().startAfter(lastKey)
-    : guessedWordsRef
-  ).on("child_added", (data) => {
-    const { word, playerID } = data.val();
-    revealWord(word, playerID);
-  });
+  guessedWordsRef.on("child_added", (snap) => handleGuess(snap.val()));
 }
 
 function getRandomArticle(categories) {
@@ -127,7 +110,7 @@ function getRandomArticle(categories) {
   return pages[Math.floor(Math.random() * pages.length)];
 }
 
-async function fetchData(article) {
+async function renderArticle(article) {
   return await fetch(
     `https://en.wikipedia.org/w/api.php?action=parse&format=json&prop=text&formatversion=2&origin=*&page=${article}`
   )
@@ -155,7 +138,7 @@ async function fetchData(article) {
         var redirURL = $(
           ".redirectText"
         )[0].firstChild.firstChild.innerHTML.replace(/ /g, "_");
-        return fetchData(redirURL);
+        return renderArticle(redirURL);
       }
       var e = document.getElementsByClassName("mw-parser-output");
 
@@ -289,9 +272,9 @@ function PerformGuess(guess) {
   RemoveHighlights(false);
   guess = guess.normalizeGuess();
   if (commonWords.includes(guess)) return;
-  if (!guessedWords.includes(guess)) {
+  if (!guessedWords.find(({ word }) => word == guess)) {
     guessedWordsRef.push({
-      playerID,
+      playerID: myPlayerID,
       word: guess,
       timestamp: firebase.database.ServerValue.TIMESTAMP,
     });
@@ -305,9 +288,9 @@ function PerformGuess(guess) {
   }
 }
 
-function revealWord(word, _playerID) {
-  if (!playerMappings[_playerID]) {
-    playerMappings[_playerID] =
+function handleGuess({ word, playerID, timestamp }) {
+  if (!playerMappings[playerID]) {
+    playerMappings[playerID] =
       colors[Object.keys(playerMappings).length % colors.length];
   }
   let numHits = 0;
@@ -316,21 +299,21 @@ function revealWord(word, _playerID) {
     for (const [elem, original] of baffled[word]) {
       elem.classList.remove("baffled");
       elem.innerText = original;
-      elem.style.color = playerMappings[_playerID];
+      elem.style.color = playerMappings[playerID];
       numHits += 1;
-      if (playerID == _playerID) {
+      if (playerID == myPlayerID) {
         elem.classList.add("highlighted");
         currentlyHighlighted = word;
       }
     }
   }
-  guessedWords.push(word);
-  LogGuess(word, numHits, _playerID);
+  guessedWords.push({ word, playerID, timestamp, numHits });
+  LogGuess(word, numHits, playerID);
   ans = ans.filter((_word) => _word != word);
   if (ans.length == 0) WinRound();
 }
 
-function LogGuess(guess, numHits, _playerID) {
+function LogGuess(guess, numHits, playerID) {
   if (hidingZero) {
     HideZero();
   }
@@ -339,7 +322,7 @@ function LogGuess(guess, numHits, _playerID) {
   newRow.setAttribute("data-word", guess);
   newRow.setAttribute("data-hits", numHits);
 
-  if (playerID == _playerID) {
+  if (playerID == myPlayerID) {
     newRow.classList.add("row-highlight");
   }
 
@@ -347,7 +330,23 @@ function LogGuess(guess, numHits, _playerID) {
     guessedWords.length
   }</td><td>${guess}</td><td class="tableHits">${numHits}</td>`;
 
-  newRow.children[1].style.color = playerMappings[_playerID];
+  newRow.children[1].style.color = playerMappings[playerID];
+}
+
+function timeToString(time) {
+  const seconds = Math.floor(time / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  if (hours > 0)
+    return `${hours} ${pluralize("hour", hours)} and ${minutes} ${pluralize(
+      "minute",
+      minutes
+    )}`;
+  else
+    return `${minutes} ${pluralize(
+      "minute",
+      minutes
+    )} and ${seconds} ${pluralize("second", seconds)}`;
 }
 
 function WinRound() {
@@ -362,6 +361,41 @@ function WinRound() {
     document.body.scrollTop = 0;
     document.documentElement.scrollTop = 0;
   }, 10);
+
+  const stats = {};
+  for (const { word, playerID, numHits } of guessedWords) {
+    stats[playerID] = stats[playerID] || { total: 0, words: 0, numHits: 0 };
+    stats[playerID].total++;
+    stats[playerID].words += numHits > 0 ? 1 : 0;
+    stats[playerID].numHits += numHits;
+  }
+  const statsHTML = Object.entries(stats)
+    .map(
+      ([playerID, stat], index) =>
+        // prettier-ignore
+        `<span style="color: ${playerMappings[playerID]}">
+          Player ${index + 1} guessed ${stat.words}/${stat.total}
+          (${Math.round((stat.words / stat.total * 100))}%) correctly,
+          revealing ${stat.numHits} words.
+        </span>`
+    )
+    .join("<br />");
+  console.log(stats, statsHTML);
+  // prettier-ignore
+  $("#winText").html(`
+    <div>
+    <p>
+      Congratulations! You solved this article with
+      ${guessedWords.length} ${pluralize("guess", guessedWords.length)} in
+      ${timeToString(guessedWords[guessedWords.length - 1].timestamp - guessedWords[0].timestamp)}!
+    </p>
+    <p>
+      ${statsHTML}
+    </p>
+    </div>
+  `);
+
+  $("#winText").css("display", "flex");
 
   SaveProgress();
 }
@@ -398,7 +432,7 @@ function SaveProgress() {
   save.prefs.hidingZero = hidingZero;
   save.prefs.hidingLog = hidingLog;
   save.prefs.pluralizing = pluralizing;
-  localStorage.setItem("wedactleSave1", JSON.stringify(save));
+  localStorage.setItem(storageKey, JSON.stringify(save));
 }
 
 function eachPair(arr) {

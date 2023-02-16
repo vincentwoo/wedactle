@@ -126,6 +126,12 @@ td {
 #wikiHolder h1 {
   padding-top: 1rem;
 }
+#winText {
+  font-family: monospace;
+  font-size: 18px;
+  margin-top: 1rem;
+  display: none;
+}
 @media (min-width: 992px) {
   .navbar.fixed-right {
     top: 0;
