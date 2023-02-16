@@ -201,7 +201,7 @@ async function fetchData(article) {
         .contents()
         .unwrap();
       var titleHolder = document.createElement("h1");
-      var titleTxt = article.replace(/_/g, " ");
+      var titleTxt = receivedJson.parse.title.replace(/_/g, " ");
       titleHolder.innerHTML = titleTxt;
       e[0].prepend(titleHolder);
       ans = titleTxt
@@ -348,12 +348,6 @@ function LogGuess(guess, numHits, _playerID) {
   }</td><td>${guess}</td><td class="tableHits">${numHits}</td>`;
 
   newRow.children[1].style.color = playerMappings[_playerID];
-
-  newRow.scrollIntoView({
-    behavior: "auto",
-    block: "center",
-    inline: "end",
-  });
 }
 
 function WinRound() {
@@ -469,7 +463,8 @@ window.onload = function() {
   });
 
   let lastVerifiedArticle;
-  $("#customGame").keyup(
+  $("#customGame").on(
+    "keyup keypress blur change",
     debounce(async function() {
       let article = $("#customGame").val();
       if (article.startsWith("https://en.wikipedia.org/wiki/")) {
