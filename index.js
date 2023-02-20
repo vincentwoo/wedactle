@@ -338,15 +338,15 @@ function timeToString(time) {
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   if (hours > 0)
-    return `${hours} ${pluralize("hour", hours)} and ${minutes} ${pluralize(
+    return `${hours} ${pluralize("hour", hours)} and ${minutes % 60} ${pluralize(
       "minute",
-      minutes
+      minutes % 60
     )}`;
   else
     return `${minutes} ${pluralize(
       "minute",
       minutes
-    )} and ${seconds} ${pluralize("second", seconds)}`;
+    )} and ${seconds % 60} ${pluralize("second", seconds % 60)}`;
 }
 
 function WinRound() {
