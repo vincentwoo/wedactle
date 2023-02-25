@@ -132,6 +132,10 @@ td {
   margin-top: 1rem;
   display: none;
 }
+#preview {
+  margin-left: 0.5rem;
+  display: none;
+}
 @media (min-width: 992px) {
   .navbar.fixed-right {
     top: 0;

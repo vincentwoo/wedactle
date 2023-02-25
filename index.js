@@ -338,15 +338,11 @@ function timeToString(time) {
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   if (hours > 0)
-    return `${hours} ${pluralize("hour", hours)} and ${minutes % 60} ${pluralize(
-      "minute",
-      minutes % 60
-    )}`;
+    return `${hours} ${pluralize("hour", hours)} and ${minutes %
+      60} ${pluralize("minute", minutes % 60)}`;
   else
-    return `${minutes} ${pluralize(
-      "minute",
-      minutes
-    )} and ${seconds % 60} ${pluralize("second", seconds % 60)}`;
+    return `${minutes} ${pluralize("minute", minutes)} and ${seconds %
+      60} ${pluralize("second", seconds % 60)}`;
 }
 
 function WinRound() {
@@ -468,6 +464,7 @@ window.onload = function() {
       </div>
     </div>`;
     }
+    $("#categories").empty();
     for (const pair of eachPair(Object.entries(articles))) {
       const row = `<div class="row">
       ${categoryHTML(pair[0])}
@@ -510,6 +507,9 @@ window.onload = function() {
       const json = await resp.json();
       const valid = json.query && Object.keys(json.query.pages)[0] > 0;
       $("#startCustomGame button").prop("disabled", !valid);
+      $("#preview")
+        .attr("href", `https://en.wikipedia.org/wiki/${article}`)
+        .toggle(valid);
       if (valid) lastVerifiedArticle = article;
       return false;
     })
