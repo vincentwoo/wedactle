@@ -472,6 +472,7 @@ window.onload = function() {
      </div>`;
       $("#categories").append(row);
     }
+    $("#startGame button").prop("disabled", false);
   });
 
   $("#startGame").submit(function() {
