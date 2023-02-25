@@ -86,6 +86,7 @@ td {
   color: #fff;
   --bs-table-hover-color: inherit;
   --bs-table-hover-bg: rgba(255, 255, 255, 0.075);
+  margin-bottom: 3.8rem;
 }
 #tableHolder thead tr th,
 #tableHolder tr td,

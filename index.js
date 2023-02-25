@@ -278,9 +278,10 @@ function PerformGuess(guess) {
       word: guess,
       timestamp: firebase.database.ServerValue.TIMESTAMP,
     });
+    $("#tableNav").scrollTop(0);
   } else {
     $(`tr[data-word='${guess}']`).addClass("row-highlight");
-    $(`tr[data-word='${guess}']`)[0].scrollIntoView();
+    $("#tableNav").scrollTop($(`tr[data-word='${guess}']`).position().top);
     currentlyHighlighted = guess;
     for (const [elem, original] of baffled[guess] || []) {
       elem.classList.add("highlighted");
