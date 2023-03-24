@@ -37,16 +37,20 @@ String.prototype.normalizeGuess = function() {
 
 String.prototype.cyrb53 = function(seed = 0) {
   let h1 = 0xdeadbeef ^ seed,
-  h2 = 0x41c6ce57 ^ seed;
+    h2 = 0x41c6ce57 ^ seed;
   for (let i = 0, ch; i < this.length; i++) {
     ch = this.charCodeAt(i);
     h1 = Math.imul(h1 ^ ch, 2654435761);
     h2 = Math.imul(h2 ^ ch, 1597334677);
   }
-  
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-  
+
+  h1 =
+    Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^
+    Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 =
+    Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^
+    Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+
   return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 };
 
@@ -469,6 +473,8 @@ function debounce(func, timeout = 300) {
 }
 
 window.onload = function() {
+  let currentArticleNum;
+  let currentArticle;
   articlesPromise.then(() => {
     function categoryHTML([category, pages]) {
       return `<div class="col">
@@ -489,6 +495,24 @@ window.onload = function() {
       $("#categories").append(row);
     }
     $("#startGame button").prop("disabled", false);
+
+    const hashed = Object.values(articles)
+      .flat()
+      .map((str) => [str.cyrb53(), str])
+      .sort(([a, _], [b, __]) => a - b);
+    const Mar_23_5am = 1679562000000;
+    currentArticleNum = Math.floor((Date.now() - Mar_23_5am) / 86400000);
+    currentArticle = hashed[currentArticleNum][1];
+    const yesterdayArticle =
+      currentArticleNum > 0 ? hashed[currentArticleNum - 1][1] : "";
+    $("#dailyInfo").html(
+      `(Daily Article #${currentArticleNum +
+        1}, yesterday's article was <i>${yesterdayArticle.replaceAll(
+        "_",
+        " "
+      )}</i>)`
+    );
+    $("#startDailyGame").prop("disabled", false);
   });
 
   $("#startGame").submit(function() {
@@ -502,11 +526,9 @@ window.onload = function() {
     return false;
   });
 
-  $("#startRedactleGame").click(async function() {
+  $("#startDailyGame").click(async function() {
     $("#newGameModal").modal("hide");
-    const resp = await fetch("https://wedactle.web.app/dailyRedactle");
-    const article = await resp.text();
-    NewGame(article);
+    NewGame(currentArticle);
     return false;
   });
 

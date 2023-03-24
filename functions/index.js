@@ -3,14 +3,6 @@ const functions = require("firebase-functions");
 const cheerio = require("cheerio");
 admin.initializeApp(functions.config().firebase);
 
-exports.dailyRedactle = functions.https.onRequest(async (req, res) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.set("Cache-Control", "public, max-age=3600");
-  const resp = await fetch("https://redactle.com/ses.php");
-  const json = await resp.json();
-  res.send(atob(json.article));
-});
-
 exports.level4Articles = functions.https.onRequest(async (req, res) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.set("Cache-Control", "public, max-age=86400");
