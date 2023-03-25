@@ -5,7 +5,7 @@ admin.initializeApp(functions.config().firebase);
 
 exports.level4Articles = functions.https.onRequest(async (req, res) => {
   res.header("Access-Control-Allow-Origin", "*");
-  res.set("Cache-Control", "public, max-age=86400");
+  res.set("Cache-Control", "public, max-age=259200"); // 3 days
   const url = "https://en.wikipedia.org/wiki/Wikipedia:Vital_articles/Level/4/";
   const categories = [
     "People",
