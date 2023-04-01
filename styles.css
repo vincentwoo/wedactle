@@ -62,9 +62,11 @@ td {
   bottom: 0;
   z-index: 1050;
   padding: 1rem 0.5rem 1rem 0;
-  background: #110f0f;
   right: 0;
-  width: 30vw;
+  /*width: 30vw;*/
+}
+#inputHolder #inGrp {
+  background: #110f0f;
 }
 #userGuess {
   min-width: 10vw;
@@ -97,13 +99,11 @@ td {
 #topNav {
   display: flex;
   top: 0;
-  width: 30vw;
   position: fixed;
   right: 0;
   z-index: 1050;
   line-height: 2.5rem;
   height: 3rem;
-  background: #110f0f;
 }
 #topNav span {
   font-size: 1.5rem;
@@ -137,6 +137,17 @@ td {
   margin-left: 0.5rem;
   display: none;
 }
+
+@media (max-width: 992px) {
+  #tableHolder {
+    display: none;
+  }
+
+  .mw-parser-output {
+    margin-top: 35px;
+  }
+}
+
 @media (min-width: 992px) {
   .navbar.fixed-right {
     top: 0;
