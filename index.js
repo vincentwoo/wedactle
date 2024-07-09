@@ -144,6 +144,7 @@ async function renderArticle(article) {
     .then((receivedJson) => {
       var cleanText = receivedJson.parse.text
         .replace(/<img[^>]*>/g, "")
+        .replace(/<figure.*?<\/figure>/g, "")
         .replace(/\<\/?small\>/g, "")
         .replace(/–/g, "-")
         .replace(/<audio.*?<\/audio>/g, "")
